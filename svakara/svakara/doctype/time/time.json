@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:time_slot",
+ "creation": "2024-07-24 18:06:45.263674",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "time_slot",
+  "sort"
+ ],
+ "fields": [
+  {
+   "fieldname": "time_slot",
+   "fieldtype": "Data",
+   "label": "time_slot",
+   "unique": 1
+  },
+  {
+   "fieldname": "sort",
+   "fieldtype": "Int",
+   "label": "sort"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-24 18:07:28.463462",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "Time",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

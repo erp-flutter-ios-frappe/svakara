@@ -9,27 +9,8 @@ import random
 from frappe.utils.password import update_password as _update_password
 from frappe.utils import add_days,nowdate
 from frappe.core.doctype.communication.email import make
+from svakara.globle import appErrorLog
 
-
-@frappe.whitelist()
-def app_error_log(title,error):
-	d = frappe.get_doc({
-			"doctype": "App Error Log",
-			"title":str("User:")+str(title+" "+"App Name:Satvars App"),
-			"error":traceback.format_exc()
-		})
-	d = d.insert(ignore_permissions=True)
-	return d	
-
-@frappe.whitelist()
-def appErrorLog(title,error):
-	d = frappe.get_doc({
-			"doctype": "App Error Log",
-			"title":str("User:")+str(title+" "+"App Name:Satvars App"),
-			"error":traceback.format_exc()
-		})
-	d = d.insert(ignore_permissions=True)
-	return d
 
 @frappe.whitelist()
 def generateResponse(_type,status=None,message=None,data=None,error=None):
@@ -56,11 +37,11 @@ def generateResponse(_type,status=None,message=None,data=None,error=None):
 @frappe.whitelist(allow_guest=True)
 def getDefaultValue():
 	response= {}
-	response["dashboard"]=frappe.db.sql("""Select * from `tabSatvaras dashboard`""",as_dict=True)
-	response["offer"]=frappe.get_all('offer', filters=[["offer","end_date",">=",nowdate()],["offer","start_date","<=",nowdate()]], fields=['*'])
+	response["dashboard"]=frappe.db.sql("""Select * from `tabDashboard images`""",as_dict=True)
+	# response["offer"]=frappe.get_all('offer', filters=[["offer","end_date",">=",nowdate()],["offer","start_date","<=",nowdate()]], fields=['*'])
 	response["settings"]=frappe.get_all('application setting', filters=[["application setting","title","=",'Satvaras']], fields=['*'])
-	response["images"]=frappe.get_all('satvaras app images', fields=['*'])
-	response["productinformation"]=frappe.get_all('satvaras product information', fields=['*'])
+	response["images"]=frappe.get_all('App Images', fields=['*'])
+	response["productinformation"]=frappe.get_all('Product Information', fields=['*'])
 	response["ERPDateTime"] = frappe.utils.data.get_datetime()
 	currenttime=frappe.utils.data.nowtime()
 	x = currenttime.split(":")
@@ -74,7 +55,7 @@ def getDefaultValue():
 	response["ERPTime"] = x[0]
 	response["ERPMinimum"] = add_days(frappe.utils.data.get_datetime(),days)
 	response["ItemChangeDateTime"] = frappe.db.sql("""select max(modified) from tabItem where  item_group = 'Products'""")[0][0]
-	response["deliveryTimeSlot"]=frappe.db.sql("""Select * from `tabtime` order by sort""",as_dict=True)
+	response["deliveryTimeSlot"]=frappe.db.sql("""Select * from `tabTime` order by sort""",as_dict=True)
 
 	return response
 
@@ -220,7 +201,7 @@ def userDetail(name):
 			response["message"]="data not found"
 			return response
 	except Exception as e:
-		error_log=app_error_log("User Detail error:",str(e))
+		error_log=appErrorLog("User Detail error:",str(e))
 		response["status"]=500
 		response["message"]="There is issue to fetch user detail"
 		return response
@@ -428,7 +409,7 @@ def UserSignUpUpdate(phoneNo,firstName,lastName,city,pincode):
 		response["message"]="customer created"
 		return response
 	except Exception as e:
-		error_log=app_error_log(phoneNo,str(e))
+		error_log=appErrorLog(phoneNo,str(e))
 		response["status"]=500
 		response["message"]=str(e)
 		response["message_trackeable"]=traceback.format_exc()
@@ -447,7 +428,7 @@ def sendOTPInEmail(email,otp):
 		return response
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
-		error_log=app_error_log(email,str(e))
+		error_log=appErrorLog(email,str(e))
 		response["status"]=500
 		response["message"]=str(e)
 		return response
@@ -473,7 +454,7 @@ def getOTPInEmail(phoneNo,email):
 			return response
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
-		error_log=app_error_log(phoneNo,str(e))
+		error_log=appErrorLog(phoneNo,str(e))
 		response["status"]=500
 		response["message"]="There is some issue please try again."
 		return response

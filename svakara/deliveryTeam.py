@@ -360,7 +360,7 @@ def getDefaultValue():
 	response["offer"]=frappe.get_all('offer', filters=[["offer","end_date",">=",nowdate()],["offer","start_date","<=",nowdate()]], fields=['*'])
 	response["settings"]=frappe.get_all('application setting', filters=[["application setting","title","=",'Satvaras']], fields=['*'])
 	response["images"]=frappe.get_all('satvaras app images', fields=['*'])
-	response["productinformation"]=frappe.get_all('satvaras product information', fields=['*'])
+	response["productinformation"]=frappe.get_all('Product Information', fields=['*'])
 	response["ERPDateTime"] = frappe.utils.data.get_datetime()
 	currenttime=frappe.utils.data.nowtime()
 	x = currenttime.split(":")

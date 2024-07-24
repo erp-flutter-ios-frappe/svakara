@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:field1",
+ "creation": "2024-07-24 18:03:59.823448",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "field1",
+  "image",
+  "title",
+  "titlecolor",
+  "imagebackcolor"
+ ],
+ "fields": [
+  {
+   "fieldname": "field1",
+   "fieldtype": "Data",
+   "label": "field1",
+   "unique": 1
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "label": "image"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "title"
+  },
+  {
+   "fieldname": "titlecolor",
+   "fieldtype": "Data",
+   "label": "titlecolor"
+  },
+  {
+   "fieldname": "imagebackcolor",
+   "fieldtype": "Data",
+   "label": "imagebackcolor"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-24 18:08:35.055453",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "App Images",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

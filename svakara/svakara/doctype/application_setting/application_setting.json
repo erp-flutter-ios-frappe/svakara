@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-07-24 17:44:00.948402",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "order_restriction",
+  "order_restriction_time",
+  "operation_close",
+  "operation_title",
+  "operation_close_reason",
+  "operation_close_image",
+  "operation_close_image_url",
+  "operation_close_mendatory",
+  "application_version",
+  "application_version_update_text",
+  "application_version_update_mandatory"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "order_restriction",
+   "fieldtype": "Check",
+   "label": "order_restriction"
+  },
+  {
+   "fieldname": "order_restriction_time",
+   "fieldtype": "Time",
+   "label": "order_restriction_time"
+  },
+  {
+   "default": "0",
+   "fieldname": "operation_close",
+   "fieldtype": "Check",
+   "label": "operation_close"
+  },
+  {
+   "fieldname": "operation_title",
+   "fieldtype": "Data",
+   "label": "operation_title"
+  },
+  {
+   "fieldname": "operation_close_reason",
+   "fieldtype": "Data",
+   "label": "operation_close_reason"
+  },
+  {
+   "fieldname": "operation_close_image",
+   "fieldtype": "Attach Image",
+   "label": "operation_close_image"
+  },
+  {
+   "fieldname": "operation_close_image_url",
+   "fieldtype": "Data",
+   "label": "operation_close_image_url"
+  },
+  {
+   "default": "0",
+   "fieldname": "operation_close_mendatory",
+   "fieldtype": "Check",
+   "label": "operation_close_mendatory"
+  },
+  {
+   "fieldname": "application_version",
+   "fieldtype": "Data",
+   "label": "application_version"
+  },
+  {
+   "fieldname": "application_version_update_text",
+   "fieldtype": "Data",
+   "label": "application_version_update_text"
+  },
+  {
+   "default": "0",
+   "fieldname": "application_version_update_mandatory",
+   "fieldtype": "Check",
+   "label": "application_version_update_mandatory"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-24 17:51:48.674804",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "application setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

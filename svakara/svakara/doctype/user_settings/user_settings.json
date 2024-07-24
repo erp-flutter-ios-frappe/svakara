@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:customer",
+ "creation": "2024-07-24 17:35:31.879306",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "customer_name",
+  "token",
+  "platform",
+  "os_version",
+  "device_name",
+  "app_version"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "customer",
+   "options": "Customer",
+   "unique": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "customer_name"
+  },
+  {
+   "fieldname": "token",
+   "fieldtype": "Text",
+   "label": "token"
+  },
+  {
+   "fieldname": "platform",
+   "fieldtype": "Data",
+   "label": "platform"
+  },
+  {
+   "fieldname": "os_version",
+   "fieldtype": "Data",
+   "label": "os_version"
+  },
+  {
+   "fieldname": "device_name",
+   "fieldtype": "Data",
+   "label": "device_name"
+  },
+  {
+   "fieldname": "app_version",
+   "fieldtype": "Data",
+   "label": "app_version"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-24 17:39:01.793949",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "User Settings",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
