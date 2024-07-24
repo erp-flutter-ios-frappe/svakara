@@ -11,7 +11,7 @@ import datetime
 
 @frappe.whitelist(allow_guest=True)
 def staff_order(items,discountAmount,totalQty,totalMRP,orderAmount,customerName,paymentMode,transactionDate,note,mobileNo=None):
-
+#Ravi
 	reply={}
 	reply["data"] = []
 	reply["status_code"] = '500'
