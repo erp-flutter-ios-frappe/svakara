@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "autoname": "EMPDEL.####",
+ "creation": "2023-11-21 13:05:59.052535",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee_name",
+  "mobile",
+  "employee_role",
+  "section_break_u3urn",
+  "disable",
+  "distributor",
+  "warehouse"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mobile",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Mobile",
+   "reqd": 1
+  },
+  {
+   "default": "Delivery Boy",
+   "fieldname": "employee_role",
+   "fieldtype": "Select",
+   "label": "Employee Role",
+   "options": "Delivery Boy\nDelivery Manager\nDelivery Head\nProduction"
+  },
+  {
+   "fieldname": "section_break_u3urn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disable",
+   "fieldtype": "Check",
+   "label": "Disable"
+  },
+  {
+   "fieldname": "distributor",
+   "fieldtype": "Link",
+   "label": "Distributor",
+   "options": "Distributor",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "distributor.warehouse",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-25 11:41:19.220738",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "Delivery Team",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

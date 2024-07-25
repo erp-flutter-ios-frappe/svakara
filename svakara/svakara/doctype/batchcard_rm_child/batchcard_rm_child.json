@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-05-26 12:08:09.508293",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "item_display_name",
+  "require_qty",
+  "umo",
+  "store_out_qty"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name"
+  },
+  {
+   "fieldname": "item_display_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Display Name"
+  },
+  {
+   "fieldname": "require_qty",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Require Qty"
+  },
+  {
+   "fieldname": "umo",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "UMO"
+  },
+  {
+   "default": " =",
+   "fieldname": "store_out_qty",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Store Out Qty"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-07-25 11:42:12.405328",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "Batchcard RM Child",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
