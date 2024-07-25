@@ -39,6 +39,7 @@ def getDefaultValue():
 	response= {}
 	response["dashboard"]=frappe.db.sql("""Select * from `tabDashboard images`""",as_dict=True)
 	# response["offer"]=frappe.get_all('offer', filters=[["offer","end_date",">=",nowdate()],["offer","start_date","<=",nowdate()]], fields=['*'])
+	response["offer"]=[]
 	response["settings"]=frappe.get_all('application setting', filters=[["application setting","title","=",'Satvaras']], fields=['*'])
 	response["images"]=frappe.get_all('App Images', fields=['*'])
 	response["productinformation"]=frappe.get_all('Product Information', fields=['*'])
