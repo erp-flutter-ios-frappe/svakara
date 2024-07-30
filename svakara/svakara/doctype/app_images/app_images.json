@@ -1,12 +1,12 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:field1",
+ "autoname": "field:title",
  "creation": "2024-07-24 18:03:59.823448",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "field1",
   "image",
   "title",
   "titlecolor",
@@ -14,35 +14,30 @@
  ],
  "fields": [
   {
-   "fieldname": "field1",
-   "fieldtype": "Data",
-   "label": "field1",
-   "unique": 1
-  },
-  {
    "fieldname": "image",
    "fieldtype": "Attach Image",
-   "label": "image"
+   "label": "Image"
   },
   {
    "fieldname": "title",
    "fieldtype": "Data",
-   "label": "title"
+   "label": "Title",
+   "unique": 1
   },
   {
    "fieldname": "titlecolor",
    "fieldtype": "Data",
-   "label": "titlecolor"
+   "label": "TitleColor"
   },
   {
    "fieldname": "imagebackcolor",
    "fieldtype": "Data",
-   "label": "imagebackcolor"
+   "label": "ImageBackColor"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-24 18:08:35.055453",
+ "modified": "2024-07-30 14:20:35.481801",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "App Images",

@@ -1,6 +1,46 @@
 import frappe
 from frappe import throw, _, scrub
 import traceback
+from erpnext.stock.doctype.quick_stock_balance.quick_stock_balance import get_stock_item_details
+from datetime import date
+
+
+@frappe.whitelist(allow_guest=True)
+def item_list_app(**kwargs):
+	# Use to fetch product list into applications
+
+	parameters=frappe._dict(kwargs)
+	allParamKeys = parameters.keys()
+
+
+	warehouse = "Stores - S"
+	if 'warehouse' in allParamKeys:
+		warehouse = parameters['warehouse']
+	if 'warehouse' in ['None',None,'']:
+		warehouse = "Stores - S"
+
+	item_res=[]
+	item_list=frappe.get_all("Item",filters=[["Item","item_group","in",["Products"]],["Item","disabled","=",0]],fields=['*'],order_by="custom_sort_order")
+	for item in item_list:
+		if item['is_stock_item']==1:
+			todaysdate = date.today()
+			balance = get_stock_item_details(warehouse,todaysdate,item["item_code"])
+			item["stock_balance"]=balance['qty']
+		else:
+			item["stock_balance"]=9999
+		
+		item["servicibility"]=1
+		item['qty'] = '0'
+		item_res.append(item)
+	return item_res
+
+
+
+
+
+
+
+
 
 
 
@@ -24,17 +64,7 @@ def Item_list_finish_item(allow_guest=True):
 		item_res.append(item)
 	return item_res
 
-@frappe.whitelist(allow_guest=True)
-def Item_list_finish_item_app(allow_guest=True):
-	# Use to fetch product list into applications
-	item_res=[]
-	item_list=frappe.get_all("Item",filters=[["Item","item_group","in",["Products"]],["Item","disabled","=",0]],fields=['*'],order_by="custom_sort_order")
-	for item in item_list:
-		item["stock_balance"]=1
-		item["servicibility"]=1
-		item['qty'] = '0'
-		item_res.append(item)
-	return item_res
+
 
 @frappe.whitelist(allow_guest=True)
 def Item_list_airport(allow_guest=True):

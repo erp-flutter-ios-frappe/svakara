@@ -1,19 +1,26 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "WALT.YY.######",
  "creation": "2024-07-24 17:19:05.649050",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "customer",
   "customer_name",
-  "transaction_date",
-  "payable_amount",
-  "wallet_balance",
-  "payment_type",
   "payment_method",
   "payment_id",
-  "sales_order"
+  "signature",
+  "reference_document",
+  "reference_document_numbre",
+  "column_break_pwjc",
+  "is_cancelled",
+  "transaction_date",
+  "server_date_and_time",
+  "paid_amount",
+  "balance",
+  "remark",
+  "amended_from"
  ],
  "fields": [
   {
@@ -23,6 +30,7 @@
    "options": "Customer"
   },
   {
+   "fetch_from": "customer.customer_name",
    "fieldname": "customer_name",
    "fieldtype": "Data",
    "label": "Customer Name"
@@ -33,44 +41,87 @@
    "label": "Transaction Date"
   },
   {
-   "fieldname": "payable_amount",
-   "fieldtype": "Currency",
-   "label": "Payable Amount"
-  },
-  {
-   "fieldname": "wallet_balance",
-   "fieldtype": "Currency",
-   "label": "Wallet Balance"
-  },
-  {
-   "fieldname": "payment_type",
-   "fieldtype": "Select",
-   "label": "Payment Type",
-   "options": "Payment\nShare Wallet In\nShare Wallet Out\nReward"
-  },
-  {
    "fieldname": "payment_method",
    "fieldtype": "Select",
    "label": "Payment Method",
-   "options": "Cash\nOnline Razor\nRewarded Amount\nTransfer\nDiscount\nPaytm\nPaytmPending\nWallet"
+   "options": "\nCash\nOnline Razor\nRewarded Amount\nTransfer\nDiscount\nPaytm\nPaytmPending\nWallet"
   },
   {
    "fieldname": "payment_id",
    "fieldtype": "Data",
-   "label": "Payment ID"
+   "label": "Payment ID",
+   "read_only": 1
   },
   {
-   "fieldname": "sales_order",
+   "fieldname": "column_break_pwjc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0.0",
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount"
+  },
+  {
+   "fieldname": "reference_document",
    "fieldtype": "Data",
-   "label": "Sales Order"
+   "label": "Reference Document",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_document_numbre",
+   "fieldtype": "Data",
+   "label": "Reference Document Numbre",
+   "read_only": 1
+  },
+  {
+   "fieldname": "server_date_and_time",
+   "fieldtype": "Datetime",
+   "label": "Server Date and Time"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Data",
+   "ignore_user_permissions": 1,
+   "label": "Signature",
+   "read_only": 1
+  },
+  {
+   "default": "0.0",
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "label": "Balance"
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Text",
+   "label": "Remark"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Wallet",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_cancelled",
+   "fieldtype": "Check",
+   "label": "Is Cancelled"
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2024-07-24 17:26:39.930880",
+ "modified": "2024-07-29 21:01:46.925752",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Wallet",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

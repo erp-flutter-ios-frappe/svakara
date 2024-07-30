@@ -3,14 +3,13 @@ from __future__ import unicode_literals
 import frappe
 from frappe import throw, msgprint, _
 import frappe.permissions
-import traceback
 import string
 import random
 from frappe.utils.password import update_password as _update_password
 from frappe.utils import add_days,nowdate
 from frappe.core.doctype.communication.email import make
 from svakara.globle import appErrorLog
-
+import traceback
 
 @frappe.whitelist()
 def generateResponse(_type,status=None,message=None,data=None,error=None):
@@ -40,7 +39,8 @@ def getDefaultValue():
 	response["dashboard"]=frappe.db.sql("""Select * from `tabDashboard images`""",as_dict=True)
 	# response["offer"]=frappe.get_all('offer', filters=[["offer","end_date",">=",nowdate()],["offer","start_date","<=",nowdate()]], fields=['*'])
 	response["offer"]=[]
-	response["settings"]=frappe.get_all('application setting', filters=[["application setting","title","=",'Satvaras']], fields=['*'])
+	response["filters"]=frappe.db.sql("""SELECT * from `tabItem Category`""",as_dict=True)
+	response["settings"]=frappe.get_all('application setting', filters=[["application setting","title","=",'Svakara']], fields=['*'])
 	response["images"]=frappe.get_all('App Images', fields=['*'])
 	response["productinformation"]=frappe.get_all('Product Information', fields=['*'])
 	response["ERPDateTime"] = frappe.utils.data.get_datetime()
@@ -64,8 +64,9 @@ def getDefaultValue():
 
 @frappe.whitelist(allow_guest=True)
 def get_version_detail(allow_guest=True):
+
 	try:
-		data1=frappe.db.sql("""select * from `tabapplication setting` where title='Satvaras'""",as_dict=True)
+		data1=frappe.db.sql("""select * from `tabapplication setting` where title='Svakara'""",as_dict=True)
 		return data1[0]
 	except Exception as e:
 		return generateResponse("F",error=e)
@@ -102,6 +103,71 @@ def save_usersetting(platform,osversion,appversion,device_name,token,phone):
 				return get_version_detail()
 	except Exception as e:
 		return generateResponse("F",error=e)
+
+
+
+@frappe.whitelist(allow_guest=True) 
+def getCustomerProfileDetail(phone):
+	
+	reply = {}
+	reply['customer']={}
+	reply['balance']={}
+	reply['address']=[]
+	reply['subscription']=[]
+
+	try:
+		filters = [["Customer", "name", "=", phone]]
+		customerDetail = frappe.get_all("Customer", filters=filters, fields=["*"])
+		if len(customerDetail) > 0:
+			reply['customer']= customerDetail[0]
+
+		filters = [
+				["Dynamic Link", "link_doctype", "=", "Customer"],
+				["Dynamic Link", "link_name", "=", phone],
+				["Address", "custom_hideaddress", "!=", 1]
+			]
+		address = frappe.get_all("Address", filters=filters, fields=['*'])
+		reply['address']=address
+
+
+		query_subscription = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `disable`='0'".format(phone)
+		reply['subscription'] = frappe.db.sql(query_subscription,as_dict=True)
+
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status"]=500
+		reply["message"]=str(e)
+		reply['message_traceable']=traceback.format_exc()
+
+	return reply
+
+
+@frappe.whitelist(allow_guest=True) 
+def getProfile(phone):
+	
+	reply={}
+	reply["status_code"]="200"
+	reply["message"]=""
+	reply["data"]=[]
+
+	try:
+		
+		reply["data"]=address
+		return reply
+			
+	except Exception as e:
+		reply["message"]=str(e)
+		reply["status_code"]="500"
+		return reply
+
+
+
+
+
+
+
+
+
 
 
 @frappe.whitelist()
@@ -215,14 +281,11 @@ def getProfile(phone):
 	reply["message"]=""
 	reply["data"]=[]
 
-
 	try:
 		filters = [
 			["Dynamic Link", "link_doctype", "=", "Customer"],
 			["Dynamic Link", "link_name", "=", phone],
-			#["Dynamic Link", "link_name", "=", frappe.session.user],
 			["Address", "custom_hideaddress", "!=", 1]
-
 		]
 		address = frappe.get_all("Address", filters=filters, fields=['*'])
 		reply["data"]=address
@@ -290,7 +353,7 @@ def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone
 					"state":state,
 					"pincode":pincode,
 					"docstatus":0,
-					"custom_is_primary_address": isprimary,
+					"custom_last_use_address": isprimary,
 					"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Address","link_name":phone,"docstatus":0,"parentfield":"links"}]
 					})
 			d.insert(ignore_permissions=True)
@@ -298,7 +361,7 @@ def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone
 			reply['name']=d.name
 			return reply
 		else:
-			query = "UPDATE `tabAddress` SET `address_line1`='{}', `address_line2`='{}', `custom_area`='{}', `city`='{}', `state`='{}', `pincode`='{}', `custom_is_primary_address`='{}' WHERE `name`='{}'".format(address1,address2,area,city,state,pincode,isprimary,name)
+			query = "UPDATE `tabAddress` SET `address_line1`='{}', `address_line2`='{}', `custom_area`='{}', `city`='{}', `state`='{}', `pincode`='{}', `custom_last_use_address`='{}' WHERE `name`='{}'".format(address1,address2,area,city,state,pincode,isprimary,name)
 			test = frappe.db.sql(query)
 
 			# doc=frappe.get_doc("Address",name)
@@ -314,7 +377,7 @@ def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone
 			# 		"pincode":pincode,
 			# 		"docstatus":0,
 			# 		"customer_name": ""+fname+" "+lname+"",
-			# 		"custom_is_primary_address": isprimary,
+			# 		"custom_last_use_address": isprimary,
 			# 		"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Address","link_name":""+frappe.session.user,"docstatus":0,"parentfield":"links"}],
 			# 		"modified":doc.modified,
 			# 		"country":doc.country,
@@ -353,6 +416,7 @@ def hideAddress(addressid):
 @frappe.whitelist(allow_guest=True) 
 def setprimaryaddress(name,phone): 
 
+	reply={}
 	try:
 		filters = [
 			["Dynamic Link", "link_doctype", "=", "Customer"],
@@ -361,16 +425,20 @@ def setprimaryaddress(name,phone):
 		address = frappe.get_all("Address", filters=filters, fields=['*']) or {}
 		for addressname in address:
 			if addressname["name"] == name:
-				frappe.db.sql("""update tabAddress SET  custom_is_primary_address = 1 WHERE name= '""" +addressname["name"] +"""'  """)
+				frappe.db.sql("""update tabAddress SET  custom_last_use_address = 1 WHERE name= '""" +addressname["name"] +"""'  """)
 			else:
-				frappe.db.sql("""update tabAddress SET  custom_is_primary_address = 0 WHERE name= '""" +addressname["name"] +"""'  """)
+				frappe.db.sql("""update tabAddress SET  custom_last_use_address = 0 WHERE name= '""" +addressname["name"] +"""'  """)
 
 
-		addressreturn = frappe.get_all("Address", filters=filters, fields=['*']) or [{"name":"", "address_line1":"", "address_line2":"", "area":"", "city":"", "state":"", "country":"","pincode":"","custom_is_primary_address":""}]
+		addressreturn = frappe.get_all("Address", filters=filters, fields=['*']) or [{"name":"", "address_line1":"", "address_line2":"", "area":"", "city":"", "state":"", "country":"","pincode":"","custom_last_use_address":""}]
 
 		return addressreturn
 	except Exception as e:
-		return generateResponse("F",error=e)
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply["message_traceback"]=traceback.format_exc()
+		return reply
 
 def id_generator(size):
    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))

@@ -1,0 +1,137 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "SUB.YY.#####",
+ "creation": "2024-07-29 15:08:29.535976",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "start_date",
+  "end_date",
+  "column_break_uyua",
+  "disable",
+  "item_detail_section",
+  "item_code",
+  "item_name",
+  "column_break_obvp",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_uyua",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disable",
+   "fieldtype": "Check",
+   "label": "Disable"
+  },
+  {
+   "fieldname": "item_detail_section",
+   "fieldtype": "Section Break",
+   "label": "Item Detail"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name"
+  },
+  {
+   "fieldname": "column_break_obvp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "monday",
+   "fieldtype": "Data",
+   "label": "Monday"
+  },
+  {
+   "fieldname": "tuesday",
+   "fieldtype": "Data",
+   "label": "Tuesday"
+  },
+  {
+   "fieldname": "wednesday",
+   "fieldtype": "Data",
+   "label": "Wednesday"
+  },
+  {
+   "fieldname": "thursday",
+   "fieldtype": "Data",
+   "label": "Thursday"
+  },
+  {
+   "fieldname": "friday",
+   "fieldtype": "Data",
+   "label": "Friday"
+  },
+  {
+   "fieldname": "saturday",
+   "fieldtype": "Data",
+   "label": "Saturday"
+  },
+  {
+   "fieldname": "sunday",
+   "fieldtype": "Data",
+   "label": "Sunday"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-29 15:23:25.537992",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "Subscription Item",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

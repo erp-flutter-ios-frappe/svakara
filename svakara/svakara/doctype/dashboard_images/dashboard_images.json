@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:title",
  "creation": "2024-07-24 17:59:43.901160",
@@ -16,34 +17,34 @@
   {
    "fieldname": "title",
    "fieldtype": "Data",
-   "label": "title",
+   "label": "Title",
    "unique": 1
   },
   {
    "fieldname": "image_name",
    "fieldtype": "Data",
-   "label": "image_name"
+   "label": "Image Name"
   },
   {
    "default": "0",
    "fieldname": "active",
    "fieldtype": "Check",
-   "label": "active"
+   "label": "Active"
   },
   {
    "fieldname": "image",
    "fieldtype": "Image",
-   "label": "image"
+   "label": "Image"
   },
   {
    "fieldname": "display_order",
    "fieldtype": "Data",
-   "label": "display_order"
+   "label": "Display Order"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-24 18:03:15.129932",
+ "modified": "2024-07-30 14:19:42.384413",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Dashboard images",

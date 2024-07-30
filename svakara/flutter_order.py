@@ -5,27 +5,126 @@ import json
 import collections
 import random
 from frappe.utils import nowdate,add_days
+from svakara.globle import appErrorLog
 
 
-@frappe.whitelist()
-def appErrorLog(title,error):
-	d = frappe.get_doc({
-			"doctype": "App Error Log",
-			"title":title,
-			"error":traceback.format_exc()
+
+
+@frappe.whitelist(allow_guest=True)
+def subscription_start(**kwargs):
+
+	parameters=frappe._dict(kwargs)
+	allParamKeys = parameters.keys()
+
+	reply={}
+	reply['message']=""
+	reply['status_code']="200"
+
+
+	if 'customer' not in allParamKeys:
+		frappe.local.response['http_status_code'] = 500
+		reply['message']="Customer not found."
+		reply['status_code']="500"
+		return reply
+
+	if 'item_code' not in allParamKeys:
+		frappe.local.response['http_status_code'] = 500
+		reply['message']="Item not found."
+		reply['status_code']="500"
+		return reply		
+		
+	if parameters['isEdit'] in ['1',True,'true','True']:
+		update_query = "UPDATE `tabSubscription Item` SET `start_date`= '{}', `end_date`='{}', `monday`='{}', `tuesday`='{}', `wednesday`='{}', `thursday`='{}', `friday`='{}', `saturday`='{}', `sunday`='{}' WHERE `name`='{}'".format(parameters['start_date'],parameters['end_date'],parameters['monday'],parameters['tuesday'],parameters['wednesday'],parameters['thursday'],parameters['friday'],parameters['saturday'],parameters['sunday'],parameters['subscription_id'])
+		test = frappe.db.sql(update_query)
+		reply['message']="Subscription update sucessfully. Your subscription number is {}.".format(parameters['subscription_id'])
+		reply['status_code']="200"
+		return reply
+
+
+
+
+	try:
+		d1=frappe.get_doc({
+			"docstatus": 0,
+			"doctype": "Subscription Item",
+			"name": "New Subscription Item 1",
+			"__islocal": 1,
+			"__unsaved": 1,
+			"customer":parameters['customer'],
+			"start_date":parameters['start_date'],
+			"end_date":parameters['end_date'],
+			"item_code":parameters['item_code'],
+			"monday":parameters['monday'],
+			"tuesday":parameters['tuesday'],
+			"wednesday":parameters['wednesday'],
+			"thursday":parameters['thursday'],
+			"friday":parameters['friday'],
+			"saturday":parameters['saturday'],
+			"sunday":parameters['sunday'],
 		})
-	d = d.insert(ignore_permissions=True)
-	return d
+		d2=d1.insert(ignore_permissions=True)
+		if d2:
+			reply['message']="Subscription start sucessfully. Your subscription number is {}.".format(d2.name)
+			reply['status_code']="200"
+			return reply
 
-@frappe.whitelist()
-def appErrorLog1(title,error):
-	d = frappe.get_doc({
-			"doctype": "App Error Log",
-			"title":title,
-			"error":error
-		})
-	d = d.insert(ignore_permissions=True)
-	return d
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status"]=500
+		reply["message"]=str(e)
+		reply['message_traceable']=traceback.format_exc()
+
+	return reply
+
+
+@frappe.whitelist(allow_guest=True)
+def subscription_check(**kwargs):
+
+	parameters=frappe._dict(kwargs)
+	allParamKeys = parameters.keys()
+
+	reply={}
+	reply['message']="Subscription not found."
+	reply['status_code']="200"
+	reply['data']={}
+
+
+	if 'customer' not in allParamKeys:
+		frappe.local.response['http_status_code'] = 500
+		reply['message']="Customer not found."
+		reply['status_code']="500"
+		return reply
+
+	if 'item_code' not in allParamKeys:
+		frappe.local.response['http_status_code'] = 500
+		reply['message']="Item not found."
+		reply['status_code']="500"
+		return reply		
+
+
+
+
+	try:
+		query = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `item_code`='{}'".format(parameters['customer'],parameters['item_code'])
+		data = frappe.db.sql(query,as_dict=True)
+		if len(data)!=0:
+			reply['message']="Subscription found."
+			reply['status_code']="200"
+			reply['data']=data[0]
+
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status"]=500
+		reply["message"]=str(e)
+		reply['message_traceable']=traceback.format_exc()
+
+	return reply
+
+
+
+
+
+
 
 @frappe.whitelist()
 def generateResponse(_type,status=None,message=None,data=None,error=None):
@@ -416,7 +515,6 @@ def salesOrderSchedule(planid,customer_name,customer,address,addresscode,daysdif
 
 	plan=frappe.get_all('Plan List', fields=['*'], filters=[["Plan List","name","=",planid]])
 
-	# appErrorLog1("Plan List",str(plan))
 
 
 	planitems=frappe.db.sql("""select itemcode from `tabplanlistitem` where parent LIKE %s""",(planid),as_dict=True)
@@ -491,7 +589,6 @@ def salesOrderSchedule(planid,customer_name,customer,address,addresscode,daysdif
 	itemsStr = "[" + itemsStr + "]"
 
 
-	# appErrorLog1("Item String",itemsStr)
 
 	totalOrderProcess=[]
 	for x in range(0, int(str(plan[0]['days']))):
