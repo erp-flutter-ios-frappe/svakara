@@ -4,10 +4,8 @@ import traceback
 import json
 from frappe.utils import nowdate
 import collections
-from svakara.globle import appErrorLog,globleUserLogin
+from svakara.globle import appErrorLog,globleLoginUser
 from datetime import datetime
-from frappe.auth import LoginManager, CookieManager
-
 
 
 @frappe.whitelist(allow_guest=True)
@@ -114,15 +112,84 @@ def walletHistory(customer):
 	return dataList
 
 
-
-
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def submitWallet(walletID):
 
-	frappe.local.form_dict = globleUserLogin()
-	frappe.local.cookie_manager = CookieManager()
-	frappe.local.login_manager = LoginManager()
+	current_user = frappe.session.user
+
+	loginUser = frappe.session.user
+	frappe.set_user(globleLoginUser())
+
 	doc=frappe.get_doc("Wallet",walletID)
 	doc.submit()
-	return ""
+
+	d1=frappe.get_doc({
+		"docstatus": 0,
+		"doctype": "Payment Entry",
+		"name": "New Payment Entry 1",
+		"__islocal": 1,
+		"__unsaved": 1,
+		"status": "Draft",
+		"posting_date": nowdate(),
+		"payment_type": "Receive",
+		"party_type":'Customer',
+		"party":doc.customer,
+		"paid_to":'Bank Account - S',
+		"paid_from":'Debtors - S',
+		"paid_to_account_currency":"INR",
+		"paid_from_account_currency":"INR",
+		"received_amount":float(doc.paid_amount),
+		"paid_amount":float(doc.paid_amount),
+		"remarks":doc.name,
+		"reference_no":doc.payment_id,
+		"reference_date":doc.transaction_date,
+		"reference_doctype":'Wallet',
+	})
+	d2=d1.insert(ignore_permissions=True)
+	d2.submit()
+
+	frappe.set_user(current_user)
+	return "Payment entry done"
+
+@frappe.whitelist(allow_guest=True)
+def submitWallet2():
+
+	reply = {}
+	reply['status_code']="200"
+	reply['message']=""
+
+	try:
+		current_user = frappe.session.user
+
+		loginUser = frappe.session.user
+		frappe.set_user(globleLoginUser())
+
+		d1=frappe.get_doc({
+			"docstatus": 0,
+			"doctype": "Payment Entry",
+			"name": "New Payment Entry 1",
+			"__islocal": 1,
+			"__unsaved": 1,
+			"status": "Draft",
+			"posting_date": nowdate(),
+			"payment_type": "Receive",
+			"party_type":'Customer',
+			"party":'1234567890',
+			"paid_to":'Bank Account - S',
+			"paid_from":'Debtors - S',
+			"paid_to_account_currency":"INR",
+			"paid_from_account_currency":"INR",
+			"paid_amount":float('100'),
+			"remarks":'Ravi',
+			"reference_doctype":'Wallet',
+		})
+		d2=d1.insert(ignore_permissions=True)
+		frappe.set_user(current_user)
+	
+	except Exception as e:
+		reply["status_code"]=500
+		reply["message"]=str(e)
+		reply['message_traceable']=traceback.format_exc()
+
+	return reply
 

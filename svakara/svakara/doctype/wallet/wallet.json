@@ -13,6 +13,7 @@
   "signature",
   "reference_document",
   "reference_document_numbre",
+  "payment_entry",
   "column_break_pwjc",
   "is_cancelled",
   "transaction_date",
@@ -112,12 +113,18 @@
    "fieldname": "is_cancelled",
    "fieldtype": "Check",
    "label": "Is Cancelled"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Data",
+   "label": "Payment Entry",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-07-29 21:01:46.925752",
+ "modified": "2024-07-31 17:49:18.322686",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Wallet",
@@ -125,6 +132,7 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -133,10 +141,13 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
+ "queue_in_background": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

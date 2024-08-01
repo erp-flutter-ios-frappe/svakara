@@ -9,10 +9,13 @@ def globleUserLogin(allow_guest=True):
 	return frappe._dict({
 		'cmd': 'login',
 		'sid': 'Desk',
-		'pwd': 'Svakara@#1',
+		'pwd': 'svakara@2024*',
 		'usr': 'svakara@gmail.com'
 	})
 
+@frappe.whitelist(allow_guest=True)
+def globleLoginUser(allow_guest=True):
+	return "svakara@gmail.com"
 
 @frappe.whitelist(allow_guest=True)
 def run_query_inDB_select(query):
