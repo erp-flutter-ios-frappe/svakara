@@ -6,6 +6,267 @@ import collections
 import random
 from frappe.utils import nowdate,add_days
 from svakara.globle import appErrorLog
+from svakara.order_submit import salesOrderSubmit
+
+
+
+@frappe.whitelist(allow_guest=True)
+def order_cart_created(**kwargs):
+
+	param=frappe._dict(kwargs)
+
+	reply={}
+	reply["status_code"]="200"
+	reply["message"]="Sucessfully"
+	reply["data"]={}
+	
+	try:
+
+		# query = "SELECT * from `tabCart Sales Order` WHERE `customer`='{}' AND `sync`=0 AND `name`='{}'".format(param['customer'],param['previousCart'])
+		# data = frappe.db.sql(query,as_dict=True)
+		# if len(data)!=0:
+
+		d1=frappe.get_doc({
+			"docstatus": 0,
+			"doctype": "Cart Sales Order",
+			"name": "New Cart Sales Order 1",
+			"__islocal": 1,
+			"__unsaved": 1,
+			"customer": param['customer'],
+			"transaction_date": str(nowdate()),
+			"delivery_date": param['delivery_date'],
+		})
+		if d1.insert(ignore_permissions=True):
+			reply["data"]=d1
+			reply["message"]="Cart created."
+			return reply
+		else:
+			frappe.local.response['http_status_code'] = 500
+			reply["data"]={}
+			reply["message"]="Cart not created."
+			reply["status_code"]="500"
+			return reply
+		
+		
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply['message_traceable']=traceback.format_exc()
+		appErrorLog('Cart - flutter_order',str(e))
+		appErrorLog('Cart - flutter_order - traceback',str(traceback.format_exc()))
+		return reply
+
+
+@frappe.whitelist(allow_guest=True) 
+def order_cart_item_upload(**kwargs):
+
+	param=frappe._dict(kwargs)
+
+	reply={}
+	reply["status_code"]="200"
+	reply["message"]=""
+	reply["data"]={}
+	
+	try:
+		parent = frappe.get_doc('Cart Sales Order', param['cardID'])
+
+		child = frappe.new_doc("Cart Sales Order Child")
+		child.update({'item_code': param['item_code'],
+		'qty': param['qty'],
+		'rate': param['rate'],
+		'parent': parent.name,
+		'parenttype': 'Cart Sales Order',
+		'parentfield': 'items'})
+		parent.items.append(child)
+		parent.save(ignore_permissions=True)
+		frappe.db.commit()
+
+		reply["message"]="child added sucessfully"
+		reply["status_code"]="200"
+		frappe.local.response['http_status_code'] = 200
+		
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply['message_traceable']=traceback.format_exc()
+		appErrorLog('Cart Items - flutter_order',str(e))
+		appErrorLog('Cart Items - flutter_order - traceback',str(traceback.format_exc()))
+
+	return reply
+
+
+@frappe.whitelist(allow_guest=True)
+def Order_Place(**kwargs):
+	
+	param=frappe._dict(kwargs)
+
+	reply={}
+	reply["status_code"]="200"
+	reply["message"]=""
+	reply["data"]={}
+
+	cartID = param['cartID']
+
+	try:
+		if not frappe.db.exists("Cart Sales Order", cartID):
+			reply["message"]="Cart not found."
+			reply["status_code"]="500"
+			frappe.local.response['http_status_code'] = 500
+			return reply
+
+		doc_cart=frappe.get_doc("Cart Sales Order",cartID)
+
+		query_so = "SELECT * FROM `tabSales Order` WHERE `po_no`='{}'".format(doc_cart.name)
+		previousOrderList = frappe.db.sql(query_so,as_dict=1)
+		if len(previousOrderList)!=0:
+			reply["message"]="Sales order is already placed."
+			frappe.local.response['http_status_code'] = 500
+			reply["status_code"]="500"
+			return reply
+
+		cart_orderItems=frappe.get_all("Cart Sales Order Child",filters=[["Cart Sales Order Child","parent","=",doc_cart.name]],fields=["*"])
+		if len(cart_orderItems)>0:
+			customer_code = doc_cart.customer
+			transaction_date = doc_cart.transaction_date
+			delivery_date = param['delivery_date']
+			orderNumber = doc_cart.name
+
+			address_id=frappe.db.sql("""select `tabAddress`.name from `tabAddress` inner join `tabDynamic Link` on `tabAddress`.name=`tabDynamic Link`.parent where `tabDynamic Link`.link_name=%s""",customer_code)
+
+			#return address_id
+			if not len(address_id)==0:
+				address_doc=frappe.get_doc("Address",address_id[0][0])
+
+			payment_type = param['payment_type']
+
+			d2 = {}
+			d1=frappe.get_doc({
+				"docstatus": 0,
+				"doctype": "Sales Order",
+				"name": "New Sales Order 1",
+				"__islocal": 1,
+				"__unsaved": 1,
+				"company": "Svakara",
+				"order_type": "Sales",
+				# "territory": "India",
+				# "currency": "INR",
+				# "price_list_currency": "INR",
+				# "apply_discount_on": "Net Total",
+				# "party_account_currency": "INR",
+				"status": "Draft",
+				"apply_discount_on":"Grand Total",
+				"transaction_date": str(transaction_date),
+				"delivery_date":str(delivery_date),
+				"items":order_item_preparation(cart_orderItems,customer_code),
+				# "terms": "",
+				"customer": str(customer_code),
+				# "discount_amount":flt(discount),
+				# "taxes":json.loads(tax_type),
+				"payment_type":payment_type,
+				# "order_payment_type":payment_type,
+				"po_no": orderNumber,
+				# "brillare_order_type": brillare_order_type,
+				# "sales_person":salesPerson,
+				# "employee":salesPerson,
+				# "courier_partner_order_id":distributor,
+				# "cumulative_scheme_order":int(offerGet),
+				# "user":userName
+			})
+			d2=d1.insert(ignore_permissions=True)
+			reply["status_code"]="200"
+			reply["message"]="Order place sucessfully."
+			reply["data"]=d2
+			reply['name']=str(d2.name)
+			frappe.enqueue(salesOrderSubmit,queue='long',job_name="Submit order: {}".format(d2.name),timeout=100000,so_no=str(d2.name))
+
+
+
+			return reply
+		else:
+			reply["status"]="500"
+			reply["message"]="Sales order items not found."
+			reply["data"]=None
+			return reply
+				
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply["message_error"]=str(e)
+		reply["message_traceable"] = str(traceback.format_exc())
+		reply["data"]={}
+		return reply
+
+
+@frappe.whitelist(allow_guest=True)
+def order_item_preparation(item_list,customer_code):
+
+	finalItemList=[]
+	for item in item_list:
+		itemObject = {}
+		itemObject['item_code']=item['item_code']
+		itemObject['qty']=item['qty']
+		itemObject['rate']=item['rate']
+		finalItemList.append(itemObject)
+
+	return finalItemList
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
