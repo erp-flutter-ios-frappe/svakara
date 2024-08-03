@@ -9,53 +9,63 @@
   "customer",
   "customer_name",
   "token",
+  "column_break_rpts",
+  "app_version",
   "platform",
-  "os_version",
   "device_name",
-  "app_version"
+  "os_version"
  ],
  "fields": [
   {
    "fieldname": "customer",
    "fieldtype": "Link",
-   "label": "customer",
+   "label": "Customer",
    "options": "Customer",
    "unique": 1
   },
   {
    "fieldname": "customer_name",
    "fieldtype": "Data",
-   "label": "customer_name"
+   "label": "Customer Name"
   },
   {
    "fieldname": "token",
    "fieldtype": "Text",
-   "label": "token"
+   "label": "Token",
+   "read_only": 1
   },
   {
    "fieldname": "platform",
    "fieldtype": "Data",
-   "label": "platform"
+   "label": "Platform",
+   "read_only": 1
   },
   {
    "fieldname": "os_version",
    "fieldtype": "Data",
-   "label": "os_version"
+   "label": "OS Version",
+   "read_only": 1
   },
   {
    "fieldname": "device_name",
    "fieldtype": "Data",
-   "label": "device_name"
+   "label": "Device Name",
+   "read_only": 1
   },
   {
    "fieldname": "app_version",
    "fieldtype": "Data",
-   "label": "app_version"
+   "label": "App Version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rpts",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-24 17:39:01.793949",
+ "modified": "2024-08-01 21:53:04.136969",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "User Settings",

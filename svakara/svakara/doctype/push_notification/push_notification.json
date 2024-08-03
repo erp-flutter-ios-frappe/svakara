@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "NOTI.YY.MM.DD.#######",
+ "creation": "2024-08-03 11:41:19.367692",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "mobile_number",
+  "title",
+  "body",
+  "section_break_zadv",
+  "success",
+  "failure",
+  "multicast_id",
+  "canonical_ids",
+  "message_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Text",
+   "label": "Body"
+  },
+  {
+   "fieldname": "section_break_zadv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "success",
+   "fieldtype": "Check",
+   "label": "Success",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "failure",
+   "fieldtype": "Check",
+   "label": "Failure",
+   "read_only": 1
+  },
+  {
+   "fieldname": "multicast_id",
+   "fieldtype": "Data",
+   "label": "Multicast Id",
+   "read_only": 1
+  },
+  {
+   "fieldname": "canonical_ids",
+   "fieldtype": "Data",
+   "label": "Canonical Ids",
+   "read_only": 1
+  },
+  {
+   "fieldname": "message_id",
+   "fieldtype": "Data",
+   "label": "Message Id",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-08-03 13:21:51.756544",
+ "modified_by": "Administrator",
+ "module": "Svakara",
+ "name": "Push Notification",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
