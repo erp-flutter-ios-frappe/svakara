@@ -48,7 +48,7 @@ def getDefaultValue():
 	x = currenttime.split(":")
 	days=0
 	#server is 1 hour behind
-	if int(x[0])>=14:
+	if int(x[0])>=23:
 		days=1
 
 	days=1

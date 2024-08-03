@@ -280,6 +280,7 @@ def subscription_start(**kwargs):
 	reply={}
 	reply['message']=""
 	reply['status_code']="200"
+	reply['subscription'] = []
 
 
 	if 'customer' not in allParamKeys:
@@ -299,6 +300,8 @@ def subscription_start(**kwargs):
 		test = frappe.db.sql(update_query)
 		reply['message']="Subscription update sucessfully. Your subscription number is {}.\n\n Recharge your wallet to get smooth services.".format(parameters['subscription_id'])
 		reply['status_code']="200"
+		query_subscription = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `disable`='0'".format(parameters['customer'])
+		reply['subscription'] = frappe.db.sql(query_subscription,as_dict=True)		
 		return reply
 
 
@@ -327,6 +330,9 @@ def subscription_start(**kwargs):
 		if d2:
 			reply['message']="Subscription start sucessfully. Your subscription number is {}.\n\n Recharge your wallet to get smooth services.".format(d2.name)
 			reply['status_code']="200"
+			query_subscription = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `disable`='0'".format(parameters['customer'])
+			reply['subscription'] = frappe.db.sql(query_subscription,as_dict=True)
+
 			return reply
 
 	except Exception as e:
@@ -962,14 +968,10 @@ def giftValidation(item_object,pincode):
 
 
 
-
-
-
-@frappe.whitelist()
-def getSalesOrderListPast():
+@frappe.whitelist(allow_guest=True)
+def getSalesOrderList(allow_guest=True):
 	try:
-		salesorder_list=frappe.get_all('Sales Order',filters=[["Sales Order","delivery_date","<",nowdate()],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",frappe.session.user]],fields=['*'],limit_page_length=100,order_by="delivery_date desc")
-		
+		salesorder_list=frappe.get_all('Sales Order',fields=['*'], filters=[["Sales Order","delivery_date",">=",nowdate()],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",frappe.session.user]],order_by="delivery_date")
 		response={}
 		if len(salesorder_list) > 0:
 			response["data"]=salesorder_list
@@ -979,6 +981,38 @@ def getSalesOrderListPast():
 		return response	
 	except Exception as e:
 		return generateResponse("F",error=e)
+
+
+
+
+## Use in savkara app
+@frappe.whitelist(allow_guest=True)
+def sales_order_list(**kwargs):
+
+	parameters=frappe._dict(kwargs)
+	allParamKeys = parameters.keys()
+
+	reply={}
+	reply['message']=""
+	reply['status_code']="200"
+	reply['data']=[]
+
+	try:
+		# salesorder_list=frappe.get_all('Sales Order',filters=[["Sales Order","delivery_date","<",nowdate()],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",frappe.session.user]],fields=['*'],limit_page_length=100,order_by="delivery_date desc")
+		salesorder_list=frappe.get_all('Sales Order',filters=[["Sales Order","delivery_date",">=",parameters['start_date']],["Sales Order","delivery_date","<=",parameters['end_date']],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",parameters['customer']]],fields=['delivery_date','grand_total','status','name'],order_by="delivery_date desc")
+		reply["data"]=salesorder_list
+
+	except Exception as e:
+		appErrorLog("order - sales_order_list",str(e))
+		appErrorLog("order - sales_order_list traceable",str(traceback.format_exc()))
+		frappe.local.response['http_status_code'] = 500
+		reply["status"]="500"
+		reply["message"]=str(e)
+		reply["message_traceable"]=str(traceback.format_exc())
+		return reply
+
+	return reply		
+
 
 @frappe.whitelist(allow_guest=True)
 def getSalesOrderListFeature(allow_guest=True):

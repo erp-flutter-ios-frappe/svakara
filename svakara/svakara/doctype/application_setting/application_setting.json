@@ -29,65 +29,65 @@
    "default": "0",
    "fieldname": "order_restriction",
    "fieldtype": "Check",
-   "label": "order_restriction"
+   "label": "Order Restriction"
   },
   {
    "fieldname": "order_restriction_time",
    "fieldtype": "Time",
-   "label": "order_restriction_time"
+   "label": "Order Restriction Time"
   },
   {
    "default": "0",
    "fieldname": "operation_close",
    "fieldtype": "Check",
-   "label": "operation_close"
+   "label": "Operation Close"
   },
   {
    "fieldname": "operation_title",
    "fieldtype": "Data",
-   "label": "operation_title"
+   "label": "Operation Title"
   },
   {
    "fieldname": "operation_close_reason",
    "fieldtype": "Data",
-   "label": "operation_close_reason"
+   "label": "Operation Close Reason"
   },
   {
    "fieldname": "operation_close_image",
    "fieldtype": "Attach Image",
-   "label": "operation_close_image"
+   "label": "Operation Close Image"
   },
   {
    "fieldname": "operation_close_image_url",
    "fieldtype": "Data",
-   "label": "operation_close_image_url"
+   "label": "Operation Close Image URL"
   },
   {
    "default": "0",
    "fieldname": "operation_close_mendatory",
    "fieldtype": "Check",
-   "label": "operation_close_mendatory"
+   "label": "Operation Close Mendatory"
   },
   {
    "fieldname": "application_version",
    "fieldtype": "Data",
-   "label": "application_version"
+   "label": "Application Version"
   },
   {
    "fieldname": "application_version_update_text",
    "fieldtype": "Data",
-   "label": "application_version_update_text"
+   "label": "Application Version Update Text"
   },
   {
    "default": "0",
    "fieldname": "application_version_update_mandatory",
    "fieldtype": "Check",
-   "label": "application_version_update_mandatory"
+   "label": "Application Version Update Mandatory"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-24 17:51:48.674804",
+ "modified": "2024-08-03 20:57:33.573389",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "application setting",
