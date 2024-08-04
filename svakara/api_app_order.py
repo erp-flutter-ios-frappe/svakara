@@ -96,7 +96,7 @@ def order_cart_item_upload(**kwargs):
 
 	return reply
 
-
+## User in svakara app
 @frappe.whitelist(allow_guest=True)
 def Order_Place(**kwargs):
 	
@@ -160,19 +160,12 @@ def Order_Place(**kwargs):
 				"transaction_date": str(transaction_date),
 				"delivery_date":str(delivery_date),
 				"items":order_item_preparation(cart_orderItems,customer_code),
-				# "terms": "",
 				"customer": str(customer_code),
-				# "discount_amount":flt(discount),
+				# "discount_amount":float(param['wallet_used']),
+				"custom_wallet_used":float(param['wallet_used']),
 				# "taxes":json.loads(tax_type),
 				"payment_type":payment_type,
-				# "order_payment_type":payment_type,
 				"po_no": orderNumber,
-				# "brillare_order_type": brillare_order_type,
-				# "sales_person":salesPerson,
-				# "employee":salesPerson,
-				# "courier_partner_order_id":distributor,
-				# "cumulative_scheme_order":int(offerGet),
-				# "user":userName
 			})
 			d2=d1.insert(ignore_permissions=True)
 			reply["status_code"]="200"
