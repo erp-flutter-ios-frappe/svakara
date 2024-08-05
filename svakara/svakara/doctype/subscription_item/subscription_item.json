@@ -11,6 +11,7 @@
   "end_date",
   "column_break_uyua",
   "disable",
+  "end_date_require",
   "item_detail_section",
   "item_code",
   "item_name",
@@ -107,11 +108,17 @@
    "fieldname": "sunday",
    "fieldtype": "Data",
    "label": "Sunday"
+  },
+  {
+   "default": "0",
+   "fieldname": "end_date_require",
+   "fieldtype": "Check",
+   "label": "End Date Require"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-29 15:23:25.537992",
+ "modified": "2024-08-05 12:57:06.328731",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Subscription Item",

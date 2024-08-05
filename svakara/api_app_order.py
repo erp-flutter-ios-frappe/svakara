@@ -289,7 +289,7 @@ def subscription_start(**kwargs):
 		return reply		
 		
 	if parameters['isEdit'] in ['1',True,'true','True']:
-		update_query = "UPDATE `tabSubscription Item` SET `start_date`= '{}', `end_date`='{}', `monday`='{}', `tuesday`='{}', `wednesday`='{}', `thursday`='{}', `friday`='{}', `saturday`='{}', `sunday`='{}' WHERE `name`='{}'".format(parameters['start_date'],parameters['end_date'],parameters['monday'],parameters['tuesday'],parameters['wednesday'],parameters['thursday'],parameters['friday'],parameters['saturday'],parameters['sunday'],parameters['subscription_id'])
+		update_query = "UPDATE `tabSubscription Item` SET `start_date`= '{}', `end_date`='{}', `end_date_require`={}, `monday`='{}', `tuesday`='{}', `wednesday`='{}', `thursday`='{}', `friday`='{}', `saturday`='{}', `sunday`='{}' WHERE `name`='{}'".format(parameters['start_date'],parameters['end_date'],parameters['end_date_requirement'],parameters['monday'],parameters['tuesday'],parameters['wednesday'],parameters['thursday'],parameters['friday'],parameters['saturday'],parameters['sunday'],parameters['subscription_id'])
 		test = frappe.db.sql(update_query)
 		reply['message']="Subscription update sucessfully. Your subscription number is {}.\n\n Recharge your wallet to get smooth services.".format(parameters['subscription_id'])
 		reply['status_code']="200"
@@ -310,6 +310,7 @@ def subscription_start(**kwargs):
 			"customer":parameters['customer'],
 			"start_date":parameters['start_date'],
 			"end_date":parameters['end_date'],
+			"end_date_require":parameters['end_date_requirement'],
 			"item_code":parameters['item_code'],
 			"monday":parameters['monday'],
 			"tuesday":parameters['tuesday'],

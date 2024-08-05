@@ -8,33 +8,14 @@ import random
 from frappe.utils.password import update_password as _update_password
 from frappe.utils import add_days,nowdate
 from frappe.core.doctype.communication.email import make
-from svakara.globle import appErrorLog
+from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody
 import traceback
 
-@frappe.whitelist()
-def generateResponse(_type,status=None,message=None,data=None,error=None):
-	response= {}
-	if _type=="S":
-		if status:
-			response["status"]=status
-		else:
-			response["status"]="200"
-		response["message"]=message
-		response["data"]=data
-	else:
-		error_log=appErrorLog(frappe.session.user,str(error))
-		frappe.local.response['http_status_code'] = 500
 
-		if status:
-			response["status"]=status
-		else:
-			response["status"]="500"	
-		response["message"]=message
-		response["data"]=None
-	return response
-
+#Use in app
 @frappe.whitelist(allow_guest=True)
 def getDefaultValue():
+
 	response= {}
 	response["dashboard"]=frappe.db.sql("""Select * from `tabDashboard images`""",as_dict=True)
 	# response["offer"]=frappe.get_all('offer', filters=[["offer","end_date",">=",nowdate()],["offer","start_date","<=",nowdate()]], fields=['*'])
@@ -60,19 +41,29 @@ def getDefaultValue():
 
 	return response
 
-
-
+#Use in app
 @frappe.whitelist(allow_guest=True)
 def get_version_detail(allow_guest=True):
 
+	reply=defaultResponseBody()
+	reply['data']={}
+
 	try:
 		data1=frappe.db.sql("""select * from `tabapplication setting` where title='Svakara'""",as_dict=True)
-		return data1[0]
+		if len(data1)!=0:
+			reply['data']= data1[0]
 	except Exception as e:
-		return generateResponse("F",error=e)
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','get_version_detail')
 
+	return reply
+
+#Use in app
 @frappe.whitelist(allow_guest=True)
-def save_usersetting(platform,osversion,appversion,device_name,token,phone):
+def save_user_setting(platform,osversion,appversion,device_name,token,phone):
+
+	reply=defaultResponseBody()
+	reply['data']={}
 
 	try:
 		query2="SELECT name FROM `tabUser Settings` WHERE `name`='{}' OR `customer`='{}'".format(str(phone),str(phone))
@@ -101,11 +92,14 @@ def save_usersetting(platform,osversion,appversion,device_name,token,phone):
 			result=d2.insert(ignore_permissions=True)
 			if result:
 				return get_version_detail()
+
 	except Exception as e:
-		return generateResponse("F",error=e)
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','save_user_setting')
 
+	return reply
 
-
+#Use in app
 @frappe.whitelist(allow_guest=True) 
 def getCustomerProfileDetail(phone):
 	
@@ -135,151 +129,17 @@ def getCustomerProfileDetail(phone):
 
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
-		reply["status"]=500
-		reply["message"]=str(e)
-		reply['message_traceable']=traceback.format_exc()
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','get_version_detail')
 
 	return reply
 
-
+#Use in app
 @frappe.whitelist(allow_guest=True) 
 def getProfile(phone):
 	
-	reply={}
-	reply["status_code"]="200"
-	reply["message"]=""
+	reply=reply=defaultResponseBody()
 	reply["data"]=[]
-
-	try:
-		
-		reply["data"]=address
-		return reply
-			
-	except Exception as e:
-		reply["message"]=str(e)
-		reply["status_code"]="500"
-		return reply
-
-
-
-
-
-
-
-
-
-
-
-@frappe.whitelist()
-def GetBalance():
-
-	return GetBalanceNew(frappe.session.user)
-
-	try:
-		totalUsedAmount= frappe.db.sql("""SELECT SUM(total) FROM `tabSales Order` where customer = '"""+frappe.session.user+"""' and `status`='Completed' """)
-		
-		totalSaleOrderAmount= frappe.db.sql("""SELECT SUM(total) FROM `tabSales Order` where customer = '"""+frappe.session.user+"""' and `status`<>'Cancelled'""")
-		
-		totalwalletamount=frappe.db.sql("""SELECT SUM(wallet_balance) FROM `tabWallet` where docstatus=1 and customer = '"""+frappe.session.user+"""'""")
-		
-		data={}
-		if totalUsedAmount[0][0] != None and totalSaleOrderAmount[0][0] !=None and totalwalletamount[0][0] != None :
-			data["WalletBalance"]=totalwalletamount[0][0] - totalUsedAmount[0][0]
-			data["AvailableBalance"]=totalwalletamount[0][0] - totalSaleOrderAmount[0][0]
-			return data
-		
-		elif totalSaleOrderAmount[0][0] !=None and totalwalletamount[0][0] != None:
-			data["WalletBalance"]=totalwalletamount[0][0]
-			data["AvailableBalance"]=totalwalletamount[0][0] - totalSaleOrderAmount[0][0]
-			return data
-
-		elif totalwalletamount[0][0] != None:
-			data["WalletBalance"]=totalwalletamount[0][0]
-			data["AvailableBalance"]=totalwalletamount[0][0]
-			return data
-		
-		else:
-			data["WalletBalance"]=0
-			data["AvailableBalance"]=0
-			return data
-		
-	except frappe.DoesNotExistError:
-		data={}
-		data["WalletBalance"]=0
-		data["AvailableBalance"]=0
-		return data
-
-
-@frappe.whitelist(allow_guest=True)
-def GetBalanceNew(phono):
-
-	try:
-		totalUsedAmount= frappe.db.sql("""SELECT SUM(total) FROM `tabSales Order` where customer = '"""+phono+"""' and `docstatus` not in ('2')""")
-		
-		totalSaleOrderAmount= frappe.db.sql("""SELECT SUM(total) FROM `tabSales Order` where customer = '"""+phono+"""' and `docstatus` not in ('2')""")
-		
-		# totalwalletamount=frappe.db.sql("""SELECT SUM(wallet_balance) FROM `tabWallet` where docstatus=1 and customer = '"""+phono+"""'""")
-		totalwalletamount=frappe.db.sql("""SELECT SUM(wallet_balance) FROM `tabWallet` where customer = '"""+phono+"""' and `docstatus` not in ('0','2')""")
-
-
-		data={}
-		if totalUsedAmount[0][0] != None and totalSaleOrderAmount[0][0] !=None and totalwalletamount[0][0] != None :
-			data["WalletBalance"]=totalwalletamount[0][0] - totalUsedAmount[0][0]
-			data["AvailableBalance"]=totalwalletamount[0][0] - totalSaleOrderAmount[0][0]
-			return data
-		
-		elif totalSaleOrderAmount[0][0] !=None and totalwalletamount[0][0] != None:
-			data["WalletBalance"]=totalwalletamount[0][0]
-			data["AvailableBalance"]=totalwalletamount[0][0] - totalSaleOrderAmount[0][0]
-			return data
-
-		elif totalwalletamount[0][0] != None:
-			data["WalletBalance"]=totalwalletamount[0][0]
-			data["AvailableBalance"]=totalwalletamount[0][0]
-			return data
-		
-		else:
-			data["WalletBalance"]=0
-			data["AvailableBalance"]=0
-			return data
-		
-	except frappe.DoesNotExistError:
-		data={}
-		data["WalletBalance"]=0
-		data["AvailableBalance"]=0
-		return data
-
-
-
-
-@frappe.whitelist(allow_guest=True)
-def userDetail(name):
-
-	response= {}
-	try:	
-		userobj=frappe.db.get("User", {"name": name})	
-		if userobj:
-			response["status"]=200
-			response["message"]="data found"
-			response["data"]=userobj
-			return response 
-		else:		
-			response["status"]=200
-			response["message"]="data not found"
-			return response
-	except Exception as e:
-		error_log=appErrorLog("User Detail error:",str(e))
-		response["status"]=500
-		response["message"]="There is issue to fetch user detail"
-		return response
-
-@frappe.whitelist(allow_guest=True) 
-def getProfile(phone):
-	
-	reply={}
-	reply["status_code"]="200"
-	reply["message"]=""
-	reply["data"]=[]
+	reply['customer']={}
 
 	try:
 		filters = [
@@ -289,59 +149,48 @@ def getProfile(phone):
 		]
 		address = frappe.get_all("Address", filters=filters, fields=['*'])
 		reply["data"]=address
+		
+		query_customer = "SELECT * from `tabCustomer` WHERE `name`='{}'".format(phone)
+		list_customer =frappe.db.sql(query_customer,as_dict=True)
+		if len(list_customer)!=0:
+			reply['customer'] = list_customer[0]
+
 		return reply
 			
 	except Exception as e:
-		reply["message"]=str(e)
-		reply["status_code"]="500"
-		return reply
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','getProfile')
 
-@frappe.whitelist(allow_guest=True) 
-def getCustomerDetail():
-	
-	try:
-		filters = [
-			["Customer", "name", "=", frappe.session.user]
-		]
-		customerDetail = frappe.get_all("Customer", filters=filters, fields=["*"])
-		if len(customerDetail) > 0:
-			return customerDetail[0]
+	return reply
+
+#Use in app
+@frappe.whitelist(allow_guest=True)
+def userDetail(name):
+
+	reply=defaultResponseBody()
+
+	try:	
+		userobj=frappe.db.get("User", {"name": name})	
+		if userobj:
+			reply["status_code"]=200
+			reply["message"]="data found"
+			reply["data"]=userobj
+			return reply 
 		else:
-			return []
+			reply["status_code"]=200
+			reply["message"]="data not found"
+
 	except Exception as e:
-		return generateResponse("F",error=e)
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','userDetail')
 
-@frappe.whitelist(allow_guest=True) 
-def reduceSubscriptionDays():
-	try:
-		filters = [
-			["Customer", "subscription_days", ">", 0]
-		]
-		customerDetail = frappe.get_all("Customer", filters=filters, fields=["*"])
-		reply={}
-		reply["count"] = str(len(customerDetail))
-		changes = []
-		for cust in customerDetail:
-			reply[cust["name"]] = cust
+	return reply
 
-			if int(cust["subscription_days"]) > 0:
-				days = int(cust["subscription_days"])
-				days = days - 1
-				test = frappe.db.sql("""update tabCustomer SET subscription_days='""" + str(days) + """' WHERE name= '""" + cust["name"] +"""'  """)
-				changes.append(test)
-
-		reply["process"] = changes
-		return reply
-	except Exception as e:
-		return generateResponse("F",error=e)
-
+#Use in app
 @frappe.whitelist(allow_guest=True)
 def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone):
-	reply={}
-	reply['status_code']="200"
-	reply['message']=""
+	reply=defaultResponseBody()
 	try:
-		
 		if len(name) == 0 :
 			d = frappe.get_doc({
 					"doctype":"Address",
@@ -390,18 +239,22 @@ def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone
 			reply['name']=name
 			return reply
 	except Exception as e:
-		reply['message']=str(e)
-		reply['message_traceable']=traceback.format_exc()
-		return reply
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','profileupdate')
+
+	return reply
 
 @frappe.whitelist() 
-def deleteAddress(name): 
+def deleteAddress(name):
+	reply=defaultResponseBody()
 	try:
 		frappe.db.sql("""DELETE FROM tabAddress WHERE name= '""" + name +"""'  """)
 		return True
 	except Exception as e:
-		return generateResponse("F",error=e)
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','deleteAddress')
 
+	return reply
 
 @frappe.whitelist(allow_guest=True)
 def hideAddress(addressid):
@@ -441,6 +294,24 @@ def setprimaryaddress(name,phone):
 		reply["message_traceback"]=traceback.format_exc()
 		return reply
 
+@frappe.whitelist(allow_guest=True) 
+def set_vacation_mode(**kwargs): 
+
+	parameters=frappe._dict(kwargs)
+	allParamKeys = parameters.keys()
+
+	reply=defaultResponseBody()
+
+	try:
+		query = "UPDATE `tabCustomer` SET `custom_vacation_mode`={} WHERE `name`='{}'".format(parameters['vacation_mode'],parameters['customer'])
+		op=frappe.db.sql(query)
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','set_vacation_mode')
+
+	return reply
+
+
 def id_generator(size):
    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))
 
@@ -453,13 +324,15 @@ def UserSignUpUpdate(phoneNo,firstName,lastName,city,pincode):
  
 		if user:			
 			frappe.db.sql("""UPDATE `tabUser` SET `last_name`='"""+lastName+"""',`location`='"""+city+"""',`bio`='"""+pincode+"""', `first_name`='"""+firstName+"""' WHERE `name`='"""+phoneNo+"""'""")
-			frappe.db.sql("""UPDATE `tabCustomer` SET `customer_name`='"""+firstName+"""' '"""+lastName+"""',`custom_city`='"""+city+"""',`custom_pincode`='"""+pincode+"""' WHERE `name`='"""+phoneNo+"""'""")
+			customerName = "{} {}".format(firstName,lastName)
+			frappe.db.sql("""UPDATE `tabCustomer` SET `customer_name`='"""+customerName+"""',`custom_city`='"""+city+"""',`custom_pincode`='"""+pincode+"""' WHERE `name`='"""+phoneNo+"""'""")
 		else:		
 			frappe.db.sql("""INSERT INTO `tabUser` (`name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`) VALUES ('"""+phoneNo+"""', 'Guest', '0', '0', 'System User', '"""+lastName+"""', '1', '"""+firstName+"""', '0', '"""+phoneNo+"""@example.com', '"""+phoneNo+"""', '"""+city+"""', '"""+pincode+"""')""")
 			
 			#frappe.db.sql("""INSERT INTO `tabUserRole` (`name`, `creation`, `modified`, `modified_by`, `owner`, `docstatus`, `parent`, `parentfield`, `parenttype`, `idx`, `role`) VALUES ('"""+id_generator(10)+"""', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '"""+phoneNo+"""', '"""+phoneNo+"""', '0', '"""+phoneNo+"""', 'user_roles', 'User', '1', 'Customer')""")
 			#frappe.db.sql("""INSERT INTO `tabHas Role` (`name`, `creation`, `modified`, `modified_by`, `owner`, `docstatus`, `parent`, `parentfield`, `parenttype`, `idx`, `role`) VALUES ('"""+id_generator(10)+"""', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '"""+phoneNo+"""', '"""+phoneNo+"""', '0', '"""+phoneNo+"""', 'roles', 'User', '1', 'Customer')""")
-			frappe.db.sql("""INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`) VALUES ('"""+phoneNo+"""', '"""+phoneNo+"""', '0',  '0', 'CUST-', '0', '"""+firstName+""" """+lastName+"""', 'India','Individual', 'Individual', '0', '"""+city+"""', '"""+pincode+"""')""")
+			customerName = "{} {}".format(firstName,lastName)
+			frappe.db.sql("""INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`) VALUES ('"""+phoneNo+"""', '"""+phoneNo+"""', '0',  '0', 'CUST-', '0', '"""+customerName+"""', 'India','Individual', 'Individual', '0', '"""+city+"""', '"""+pincode+"""')""")
 			d = frappe.get_doc({
 				"doctype": "DefaultValue",
 				"parent": "" + phoneNo,
@@ -537,8 +410,8 @@ def issueCreate(subject,raised_by,description):
 
 	try:
 		frappe.sendmail(
-			recipients = ['meetbarot154@gmail.com','rsp4388@gmail.com','support@satvaras.com','jitendersinhd@gmail.com'],
-			sender = "satvaras2020@gmail.com",
+			recipients = ['contact@svakara.com'],
+			sender = "contact@svakara.com",
 			subject = "Customer issue : {}".format(str(subject)),
 			content = "Raise by:<br>{}<br>Description:<br>{}".format(raised_by,description),
 			now = True
@@ -552,7 +425,7 @@ def issueCreate(subject,raised_by,description):
 					"__unsaved": 1,
 					"status": "Open",
 					"subject": subject,
-					"raised_by":"support@satvaras.com",
+					"raised_by":"contact@svakara.com",
 					"description":"Raise by:<br>{}<br>Description:<br>{}".format(raised_by,description),
 				})
 		d2=d1.insert(ignore_permissions=True)
@@ -567,79 +440,3 @@ def issueCreate(subject,raised_by,description):
 		response["status"]="500"
 		response["message"]=str(e)
 		return response
-
-@frappe.whitelist(allow_guest=True)
-def leadDisable(firstname,lastname,email,phone,dob,gender,country,state,city):
-
-	alreadyAdded=frappe.db.sql("""select * from `tabMarketingList` where email=%s""",email)
-	#return alreadyAdded
-	if len(alreadyAdded) > 0:
-		frappe.db.set_value("MarketingList",alreadyAdded[0][0],"inactive",1)
-		frappe.db.commit()
-		return True
-
-	d1=frappe.get_doc({
-				"docstatus": 0,
-				"doctype": "MarketingList",
-				"name": "MarketingList 1",
-				"__islocal": 1,
-				"__unsaved": 1,
-				"first_name": firstname,
-				"last_name": lastname,
-				"email":email,
-				"phone":phone,
-				"dob":dob,
-				"gender":gender,
-				"country":country,
-				"state":state,
-				"city":city,
-			})
-	d2=d1.insert(ignore_permissions=True)
-	alreadyAdded=frappe.db.sql("""select email from `tabMarketingList` where email=%s""",email)
-	if len(alreadyAdded) > 0:
-		frappe.db.set_value("MarketingList",alreadyAdded['name'],"inactive",1)
-		frappe.db.commit()
-
-	return True
-
-
-
-@frappe.whitelist(allow_guest=True)
-def leadCreated(firstname,lastname,email,phone,dob,gender,country,state,city):
-
-	try:
-
-		alreadyAdded=frappe.db.sql("""select email from `tabMarketingList` where email=%s""",email)
-
-		if len(alreadyAdded) > 0:
-			frappe.local.response['http_status_code'] = 200
-			return True
-
-
-		d1=frappe.get_doc({
-					"docstatus": 0,
-					"doctype": "MarketingList",
-					"name": "MarketingList 1",
-					"__islocal": 1,
-					"__unsaved": 1,
-					"first_name": firstname,
-					"last_name": lastname,
-					"email":email,
-					"phone":phone,
-					"dob":dob,
-					"gender":gender,
-					"country":country,
-					"state":state,
-					"city":city,
-				})
-		d2=d1.insert(ignore_permissions=True)
-		frappe.local.response['http_status_code'] = 200
-		return True
-
-	except Exception as e:
-		response={}
-		error_log=appErrorLog(frappe.session.user,e)
-		frappe.local.response['http_status_code'] = 500
-		response["status"]="500"
-		response["message"]=str(e)
-		return False
