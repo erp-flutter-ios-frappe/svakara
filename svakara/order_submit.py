@@ -4,7 +4,8 @@ from frappe import _
 from frappe.contacts.doctype.address.address import get_company_address
 from frappe.model.utils import get_fetch_values
 from frappe.model.mapper import get_mapped_doc
-from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
+# from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from erpnext.stock.stock_ledger import NegativeStockError
 from erpnext.stock.doctype.batch.batch import UnableToSelectBatchError
 from frappe.utils import flt,get_last_day
@@ -13,9 +14,9 @@ from datetime import datetime
 from svakara.globle import appErrorLog,globleLoginUser
 
 @frappe.whitelist(allow_guest=True)
-def salesOrderSubmit(so_no):
+def salesOrderSubmit(so_no,invoice,delivery_note):
 
-	frappe.enqueue(salesOrderSubmit_Process,queue='long',job_name="Submiting Order: {}".format(so_no),timeout=50000,so_no=so_no)	
+	frappe.enqueue(salesOrderSubmit_Process,queue='long',job_name="Submiting Order: {}".format(so_no),timeout=50000,so_no=so_no,invoice=invoice,delivery_note=delivery_note)
 
 	reply={}
 	reply['message']='Order start processing'
@@ -24,7 +25,7 @@ def salesOrderSubmit(so_no):
 
 
 @frappe.whitelist(allow_guest=True)
-def salesOrderSubmit_Process(so_no):
+def salesOrderSubmit_Process(so_no,invoice,delivery_note):
 
 	current_user = frappe.session.user
 	frappe.set_user(globleLoginUser())
@@ -52,10 +53,18 @@ def salesOrderSubmit_Process(so_no):
 
 	if doc1so.docstatus==0:
 		temp = doc1so.submit()
+		doc1so=frappe.get_doc("Sales Order",so_no)
 
 	# return "Order submited"
 
-	return make_delivery_note(doc1so.name,current_user)
+
+	if invoice==1:
+		frappe.enqueue(make_auto_invoice,queue='short',job_name="Create Sales Invoice: {}".format(doc1so.name),timeout=50000,so_no=so_no,doc=doc1so,current_user=current_user)
+
+	if delivery_note==1:
+		frappe.enqueue(make_delivery_note,queue='long',job_name="Create Delivery Note: {}".format(doc1so.name),timeout=50000,so_no=so_no,doc=doc1so,current_user=current_user)
+
+	return "Process"
 
 @frappe.whitelist(allow_guest=True)
 def make_delivery_note(source_name,current_user, target_doc=None):
@@ -158,4 +167,36 @@ def make_auto_invoice(so_no, doc,current_user):
 	sinv_after_save.submit()
 	frappe.set_user(current_user)
 	
+	frappe.enqueue(payment_reconsilation,queue='long',job_name="Payment reconsilation: {}".format(so_no),timeout=50000,so_no=so_no)
+
 	return "Sales invoice done"
+
+
+@frappe.whitelist(allow_guest=True)
+def payment_reconsilation(so_no):
+
+	current_user = frappe.session.user
+	frappe.set_user(globleLoginUser())
+
+	doc1so_temp=frappe.get_doc("Sales Order",so_no)
+
+	d1=frappe.get_doc({
+		"docstatus": 0,
+		"doctype": "Process Payment Reconciliation",
+		"name": "New Process Payment Reconciliation 1",
+		"__islocal": 1,
+		"__unsaved": 1,
+		"company": "Svakara",
+		"party_type": "Customer",
+		"status": "Draft",
+		"party":doc1so_temp.customer,
+		"receivable_payable_account": 'Debtors - S',
+	})
+	d2=d1.insert(ignore_permissions=True)
+
+	d2.submit()
+	frappe.set_user(current_user)
+
+
+	return 'Payment reconsilation'
+

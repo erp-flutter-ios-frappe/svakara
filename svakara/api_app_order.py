@@ -5,9 +5,9 @@ import json
 import collections
 import random
 from frappe.utils import nowdate,add_days
-from svakara.globle import appErrorLog
+from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody
 from svakara.order_submit import salesOrderSubmit
-
+from datetime import datetime
 
 
 @frappe.whitelist(allow_guest=True)
@@ -56,7 +56,6 @@ def order_cart_created(**kwargs):
 		appErrorLog('Cart - flutter_order',str(e))
 		appErrorLog('Cart - flutter_order - traceback',str(traceback.format_exc()))
 		return reply
-
 
 @frappe.whitelist(allow_guest=True) 
 def order_cart_item_upload(**kwargs):
@@ -172,7 +171,7 @@ def Order_Place(**kwargs):
 			reply["message"]="Order place sucessfully."
 			reply["data"]=d2
 			reply['name']=str(d2.name)
-			frappe.enqueue(salesOrderSubmit,queue='long',job_name="Submit order: {}".format(d2.name),timeout=100000,so_no=str(d2.name))
+			frappe.enqueue(salesOrderSubmit,queue='long',job_name="Submit order: {}".format(d2.name),timeout=100000,so_no=str(d2.name),invoice=1,delivery_note=0)
 
 
 
@@ -192,7 +191,6 @@ def Order_Place(**kwargs):
 		reply["data"]={}
 		return reply
 
-
 @frappe.whitelist(allow_guest=True)
 def order_item_preparation(item_list,customer_code):
 
@@ -205,6 +203,114 @@ def order_item_preparation(item_list,customer_code):
 		finalItemList.append(itemObject)
 
 	return finalItemList
+
+
+@frappe.whitelist(allow_guest=True)
+def subscription_cron():
+	query_so = "SELECT * FROM `tabSubscription Item` WHERE `disable`='0'"
+	previousOrderList = frappe.db.sql(query_so,as_dict=1)
+	for ord in previousOrderList:
+		frappe.enqueue(order_place_subscription,queue='long',job_name="Subscription order: {}".format(ord['name']),timeout=100000,doc=ord)
+
+	return 'Cron start'
+
+
+@frappe.whitelist(allow_guest=True)
+def order_place_subscription(doc):
+	
+	reply=defaultResponseBody()
+	reply["data"]={}
+
+	try:
+		day = datetime.today().strftime("%A")
+		delivery_date = str(datetime.today()).split(' ')[0]
+
+		po_no = str(delivery_date)
+		po_no = po_no.replace("-","")
+		po_no = "{}-{}".format(po_no,doc.item_code)
+
+
+		query_so = "SELECT * FROM `tabSales Order` WHERE `custom_subscription_plan_id`='{}' AND `po_no`='{}'".format(doc['name'],po_no)
+		previousOrderList = frappe.db.sql(query_so,as_dict=1)
+		if len(previousOrderList)!=0:
+			reply["message"]="Sales order is already placed."
+			frappe.local.response['http_status_code'] = 500
+			reply["status_code"]="500"
+			return reply
+
+			#Find address
+		filters = [
+				["Dynamic Link", "link_doctype", "=", "Customer"],
+				["Dynamic Link", "link_name", "=", doc['customer']],
+				["Address", "custom_hideaddress", "!=", 1]
+			]
+		address = frappe.get_all("Address", filters=filters, fields=['*'])
+		address_doc={}
+		customer_address=''
+		for ad in address:
+			if ad.is_primary_address == 1:
+				address_doc=frappe.get_doc("Address",ad.name)
+				customer_address = ad.name
+				break
+
+		item_detail=frappe.get_doc("Item",doc['item_code'])
+
+
+		qty=0
+		save_qty = doc[day.lower()]
+		if save_qty in ['','null',None]:
+			save_qty = 0
+		else:
+			save_qty = float(doc[day.lower()])
+
+		if save_qty==0:
+			return "qty not found for day"
+
+		finalItemList=[]
+		itemObject = {}
+		itemObject['item_code']=doc.item_code
+		itemObject['qty']=save_qty
+		itemObject['rate']=float(item_detail.custom_subscriber_rate)
+		finalItemList.append(itemObject)
+	
+		d1=frappe.get_doc({
+			"docstatus": 0,
+			"doctype": "Sales Order",
+			"name": "New Sales Order 1",
+			"__islocal": 1,
+			"__unsaved": 1,
+			"company": "Svakara",
+			"order_type": "Sales",
+			"status": "Draft",
+			"apply_discount_on":"Grand Total",
+			"transaction_date": delivery_date,#
+			"delivery_date":delivery_date,#
+			"items":finalItemList,#
+			"customer": doc['customer'],#
+			"custom_wallet_used":float(save_qty)*float(item_detail.custom_subscriber_rate),#
+			"custom_payment_mode":'Wallet',#
+			"po_no": po_no,#
+			"custom_subscription_plan_id":doc['name'],#
+			"customer_address":customer_address,#
+		})
+		d2=d1.insert(ignore_permissions=True)
+
+		reply["status_code"]="200"
+		reply["message"]="Order place sucessfully."
+		reply["data"]=d2
+		reply['name']=str(d2.name)
+		frappe.db.commit()
+		frappe.enqueue(salesOrderSubmit,queue='long',job_name="Submit order: {}".format(d2.name),timeout=100000,so_no=str(d2.name),invoice=1,delivery_note=0)
+
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply["message_error"]=str(e)
+		reply["message_traceable"] = str(traceback.format_exc())
+		reply["data"]={}
+		
+	return reply
 
 
 

@@ -133,13 +133,14 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+
 # 	"all": [
 # 		"svakara.tasks.all"
 # 	],
-# 	"daily": [
-# 		"svakara.tasks.daily"
-# 	],
+	"daily": [
+		"svakara.api_app_order.subscription_cron",
+	],
 # 	"hourly": [
 # 		"svakara.tasks.hourly"
 # 	],
@@ -149,7 +150,7 @@ app_license = "mit"
 # 	"monthly": [
 # 		"svakara.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------
