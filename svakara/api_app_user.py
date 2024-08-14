@@ -101,59 +101,69 @@ def save_user_setting(platform,osversion,appversion,device_name,token,phone):
 
 #Use in app
 @frappe.whitelist(allow_guest=True) 
-def getCustomerProfileDetail(phone):
-	
-	reply = {}
-	reply['customer']={}
-	reply['balance']={}
-	reply['address']=[]
-	reply['subscription']=[]
-
-	try:
-		filters = [["Customer", "name", "=", phone]]
-		customerDetail = frappe.get_all("Customer", filters=filters, fields=["*"])
-		if len(customerDetail) > 0:
-			reply['customer']= customerDetail[0]
-
-		filters = [
-				["Dynamic Link", "link_doctype", "=", "Customer"],
-				["Dynamic Link", "link_name", "=", phone],
-				["Address", "custom_hideaddress", "!=", 1]
-			]
-		address = frappe.get_all("Address", filters=filters, fields=['*'])
-		reply['address']=address
-
-
-		query_subscription = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `disable`='0'".format(phone)
-		reply['subscription'] = frappe.db.sql(query_subscription,as_dict=True)
-
-	except Exception as e:
-		frappe.local.response['http_status_code'] = 500
-		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','get_version_detail')
-
-	return reply
-
-#Use in app
-@frappe.whitelist(allow_guest=True) 
 def getProfile(phone):
 	
 	reply=reply=defaultResponseBody()
 	reply["data"]=[]
+	reply["addresses"]=[]
 	reply['customer']={}
+	reply['user']={}
+	reply['distributor']={}
+	reply['delivery']={}
+	reply['subscription'] = []
+	reply['pages'] = []
 
 	try:
+
+		dil_query = "SELECT * from `tabDelivery Team` WHERE `mobile`='{}' AND `disable`=0".format(phone)
+		dil_list =frappe.db.sql(dil_query,as_dict=True)
+		if len(dil_list)!=0:
+			reply['delivery'] = dil_list[0]
+
+
+		is_distributor = False
+		dis_query = "SELECT * from `tabDistributor` WHERE `mobile`='{}' AND `disable`=0".format(phone)
+		dis_list =frappe.db.sql(dis_query,as_dict=True)
+		if len(dis_list)!=0:
+			reply['distributor'] = dis_list[0]
+			is_distributor = True
+
+		if is_distributor:
+			customer_query = "SELECT * from `tabCustomer` WHERE `name`='{}'".format(dis_list[0]['customer'])
+			customer_list =frappe.db.sql(customer_query,as_dict=True)
+			if len(customer_list)!=0:
+				reply['customer'] = customer_list[0]
+
+			user_query = "SELECT * from `tabUser` WHERE `name`='{}'".format(dis_list[0]['user'])
+			user_list =frappe.db.sql(user_query,as_dict=True)
+			if len(user_list)!=0:
+				reply['user'] = user_list[0]
+
+		else:
+			customer_query = "SELECT * from `tabCustomer` WHERE `name`='{}'".format(phone)
+			customer_list =frappe.db.sql(customer_query,as_dict=True)
+			if len(customer_list)!=0:
+				reply['customer'] = customer_list[0]
+
+			user_query = "SELECT * from `tabUser` WHERE `name`='{}'".format(phone)
+			user_list =frappe.db.sql(user_query,as_dict=True)
+			if len(user_list)!=0:
+				reply['user'] = user_list[0]
+
 		filters = [
 			["Dynamic Link", "link_doctype", "=", "Customer"],
 			["Dynamic Link", "link_name", "=", phone],
 			["Address", "custom_hideaddress", "!=", 1]
 		]
-		address = frappe.get_all("Address", filters=filters, fields=['*'])
-		reply["data"]=address
+		address_list = frappe.get_all("Address", filters=filters, fields=['*'])
+		reply["data"]=address_list
+		reply["addresses"]=address_list
 		
-		query_customer = "SELECT * from `tabCustomer` WHERE `name`='{}'".format(phone)
-		list_customer =frappe.db.sql(query_customer,as_dict=True)
-		if len(list_customer)!=0:
-			reply['customer'] = list_customer[0]
+		query_subscription = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `disable`='0'".format(phone)
+		reply['subscription'] = frappe.db.sql(query_subscription,as_dict=True)
+
+		pages_query = "SELECT * FROM `tabStaff Page Permission Child` WHERE `parent`='{}'".format(phone)
+		reply['pages'] =frappe.db.sql(pages_query,as_dict=True)
 
 		return reply
 			
@@ -189,6 +199,7 @@ def userDetail(name):
 #Use in app
 @frappe.whitelist(allow_guest=True)
 def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone):
+	
 	reply=defaultResponseBody()
 	try:
 		if len(name) == 0 :
@@ -327,7 +338,7 @@ def UserSignUpUpdate(phoneNo,firstName,lastName,city,pincode):
 			customerName = "{} {}".format(firstName,lastName)
 			frappe.db.sql("""UPDATE `tabCustomer` SET `customer_name`='"""+customerName+"""',`custom_city`='"""+city+"""',`custom_pincode`='"""+pincode+"""' WHERE `name`='"""+phoneNo+"""'""")
 		else:		
-			frappe.db.sql("""INSERT INTO `tabUser` (`name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`) VALUES ('"""+phoneNo+"""', 'Guest', '0', '0', 'System User', '"""+lastName+"""', '1', '"""+firstName+"""', '0', '"""+phoneNo+"""@example.com', '"""+phoneNo+"""', '"""+city+"""', '"""+pincode+"""')""")
+			frappe.db.sql("""INSERT INTO `tabUser` (`name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`) VALUES ('"""+phoneNo+"""', 'Guest', '0', '0', 'Website User', '"""+lastName+"""', '1', '"""+firstName+"""', '0', '"""+phoneNo+"""@example.com', '"""+phoneNo+"""', '"""+city+"""', '"""+pincode+"""')""")
 			
 			#frappe.db.sql("""INSERT INTO `tabUserRole` (`name`, `creation`, `modified`, `modified_by`, `owner`, `docstatus`, `parent`, `parentfield`, `parenttype`, `idx`, `role`) VALUES ('"""+id_generator(10)+"""', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '"""+phoneNo+"""', '"""+phoneNo+"""', '0', '"""+phoneNo+"""', 'user_roles', 'User', '1', 'Customer')""")
 			#frappe.db.sql("""INSERT INTO `tabHas Role` (`name`, `creation`, `modified`, `modified_by`, `owner`, `docstatus`, `parent`, `parentfield`, `parenttype`, `idx`, `role`) VALUES ('"""+id_generator(10)+"""', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '"""+phoneNo+"""', '"""+phoneNo+"""', '0', '"""+phoneNo+"""', 'roles', 'User', '1', 'Customer')""")

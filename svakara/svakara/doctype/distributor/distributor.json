@@ -8,8 +8,11 @@
  "field_order": [
   "basic_info_section",
   "full_name",
+  "mobile",
   "column_break_hxoe",
+  "disable",
   "user",
+  "customer",
   "warehouse"
  ],
  "fields": [
@@ -44,11 +47,29 @@
    "label": "Warehouse",
    "options": "Warehouse",
    "reqd": 1
+  },
+  {
+   "fieldname": "mobile",
+   "fieldtype": "Data",
+   "label": "Mobile (Use to login)"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disable",
+   "fieldtype": "Check",
+   "label": "disable"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-25 11:19:16.967948",
+ "modified": "2024-08-13 17:05:34.160485",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Distributor",

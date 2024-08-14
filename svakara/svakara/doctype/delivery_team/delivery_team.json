@@ -9,11 +9,11 @@
  "field_order": [
   "employee_name",
   "mobile",
-  "employee_role",
   "section_break_u3urn",
   "disable",
-  "distributor",
-  "warehouse"
+  "user",
+  "customer",
+  "distributor"
  ],
  "fields": [
   {
@@ -29,13 +29,6 @@
    "in_list_view": 1,
    "label": "Mobile",
    "reqd": 1
-  },
-  {
-   "default": "Delivery Boy",
-   "fieldname": "employee_role",
-   "fieldtype": "Select",
-   "label": "Employee Role",
-   "options": "Delivery Boy\nDelivery Manager\nDelivery Head\nProduction"
   },
   {
    "fieldname": "section_break_u3urn",
@@ -55,16 +48,23 @@
    "reqd": 1
   },
   {
-   "fetch_from": "distributor.warehouse",
-   "fieldname": "warehouse",
+   "fieldname": "customer",
    "fieldtype": "Link",
-   "label": "Warehouse",
-   "options": "Warehouse"
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-25 11:41:19.220738",
+ "modified": "2024-08-13 17:09:23.475263",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Delivery Team",

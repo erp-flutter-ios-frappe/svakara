@@ -1,36 +1,40 @@
 {
  "actions": [],
- "autoname": "field:user",
- "creation": "2024-08-13 16:28:04.119297",
+ "autoname": "field:page",
+ "creation": "2024-08-13 16:29:35.930754",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "user",
-  "pages"
+  "page",
+  "image",
+  "display_title"
  ],
  "fields": [
   {
-   "fieldname": "user",
-   "fieldtype": "Link",
+   "fieldname": "page",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "User",
-   "options": "User",
+   "label": "Title",
    "reqd": 1,
    "unique": 1
   },
   {
-   "fieldname": "pages",
-   "fieldtype": "Table",
-   "label": "Pages",
-   "options": "Staff Page Permission Child"
+   "fieldname": "image",
+   "fieldtype": "Data",
+   "label": "Image"
+  },
+  {
+   "fieldname": "display_title",
+   "fieldtype": "Data",
+   "label": "Display Title"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-13 16:34:05.015342",
+ "modified": "2024-08-13 17:52:17.977664",
  "modified_by": "Administrator",
  "module": "Svakara",
- "name": "Staff Page Permission",
+ "name": "Staff Pages",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
