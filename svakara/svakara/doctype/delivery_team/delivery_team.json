@@ -3,6 +3,7 @@
  "autoname": "EMPDEL.####",
  "creation": "2023-11-21 13:05:59.052535",
  "default_view": "List",
+ "description": "This is delivery team records.\nIf you want to set employee id then it will allow to use attendance , leave, expenses module in it.\nIt require to create customer because it need to manage payments entry.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -13,7 +14,8 @@
   "disable",
   "user",
   "customer",
-  "distributor"
+  "distributor",
+  "employee"
  ],
  "fields": [
   {
@@ -60,11 +62,17 @@
    "label": "User",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee ID",
+   "options": "Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-13 17:09:23.475263",
+ "modified": "2024-08-15 11:55:47.999318",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Delivery Team",
