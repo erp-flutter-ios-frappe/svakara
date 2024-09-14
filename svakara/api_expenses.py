@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime
 from hrms.hr.doctype.leave_application.leave_application import get_leave_details
 from frappe.utils import today
-
+from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody
 
 ################# Expenses
 #install hrms appliacation on site
@@ -29,75 +29,26 @@ from frappe.utils import today
 def expenses_type(**kwargs):
 
 	parameters=frappe._dict(kwargs)
-	reply={}
-	reply["message"]="list found."
-	reply["status_code"]="200"
+	reply=defaultResponseBody()
 	reply["data"]=[]
+	reply["parameters"]=parameters
 
 	try:
-		listExpensesType=frappe.get_all("Expense Claim Type",fields=["*"])
-
-		data = []
-		expenseaprrove=frappe.db.get("Employee",parameters['employee'])
-
-		if expenseaprrove:
-			if expenseaprrove.allowance_structure not in ["",None,"none","None"]:
-				allowancestructure=frappe.db.get("Allowance Structure",str(expenseaprrove.allowance_structure))
-				if allowancestructure:
-					for expensestype in listExpensesType:
-						expensestype["amount"] = "0"
-						expensestype["readonly"] = "0"
-						expensestype["hidden"] = "0"
-						
-						if expensestype["name"] in ["HQ DA"]:
-							expensestype["amount"] = allowancestructure.hq_da
-							expensestype["readonly"] = "1"
-						elif expensestype["name"] in ["Ex HQ DA"]:
-							expensestype["amount"] = allowancestructure.ex_hq_da
-							expensestype["readonly"] = "1"
-						elif expensestype["name"] in ["Ex HQ Metro DA"]:
-							expensestype["amount"] = allowancestructure.ex_hq_metro_da
-							expensestype["readonly"] = "1"
-						elif expensestype["name"] in ["Hotel N Food"]:
-							expensestype["amount"] = allowancestructure.hotel_n_food
-							expensestype["readonly"] = "0"
-						elif expensestype["name"] in ["Intercity"]:
-							expensestype["amount"] = allowancestructure.intercity
-							expensestype["readonly"] = "0"													
-						elif expensestype["name"] in ["Mobile"]:
-							expensestype["amount"] = allowancestructure.mobile_bill_reimbursement_actual_or_upto
-							expensestype["readonly"] = "1"	
-							#expensestype["hidden"] = "1"
-							expensestype["hidden"] = "0"
-
-
-						if expensestype["hidden"]=="0":
-							data.append(expensestype)
-
-
-		reply["data"]=data
-
-		return reply
+		reply["data"]=frappe.get_all("Expense Claim Type",fields=["*"])
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
-		reply["status_code"]="500"
-		errotext="{} param: {} /n error: {}".format(str(frappe.session.user),str(e))
-		# appErrorLogGloble("Expenses - expenses_list",errotext)
-		# appErrorLogGloble("Expenses - expenses_list",traceback.format_exc())
-		reply["error"]=errotext
-		reply["message"]=str(e)
-		reply["error1"]=traceback.format_exc()
-		return reply
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_expenses','expenses_type')
+
+	return reply
 	
 @frappe.whitelist(allow_guest=True)
 def expenses_list(**kwargs):
 
 	parameters=frappe._dict(kwargs)
 
-	reply={}
-	reply["message"]="list found."
-	reply["status_code"]="200"
+	reply=defaultResponseBody()
 	reply["data"]=[]
+	reply["parameters"]=parameters
 
 	try:
 		expenseList = frappe.get_all('Expense Claim', filters=[["Expense Claim","custom_month","=",parameters['month']],
@@ -116,64 +67,75 @@ def expenses_list(**kwargs):
 		return reply
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
-		reply["status_code"]="500"
-		# errotext="{} param: {} /n error: {}".format(str(frappe.session.user),str(e))
-		# appErrorLogGloble("Expenses - expenses_list",errotext)
-		# appErrorLogGloble("Expenses - expenses_list",traceback.format_exc())
-		# reply["error"]=errotext
-		reply["message"]=str(e)
-		reply["error1"]=traceback.format_exc()
-		return reply
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_expenses','expenses_list')
+
+	return reply
 
 @frappe.whitelist(allow_guest=True)
 def expenses_delete_child(**kwargs):
 
 	parameters=frappe._dict(kwargs)
 
-	expenseChildList = frappe.get_all('Expense Claim Detail', filters=[["Expense Claim Detail","name","=",str(parameters['recordname'])]], fields=['*'])
-	if len(expenseChildList)!=0:
-		expenseList = frappe.get_all('Expense Claim Detail', filters=[["Expense Claim Detail","parent","=",str(expenseChildList[0]["parent"])]], fields=['*'])
-		if len(expenseList)==1:
-			if str(expenseChildList[0]["expense_type"]) in ["Mobile"]:
-				reply={}
-				frappe.local.response['http_status_code'] = 500
-				reply["status_code"]="500"
-				reply["message"]="You are not allow to delete this expense."
-				return reply
-			else:
+	reply=defaultResponseBody()
+	reply["data"]=[]
+	reply["parameters"]=parameters
+
+	try:
+		expenseChildList = frappe.get_all('Expense Claim Detail', filters=[["Expense Claim Detail","name","=",str(parameters['recordname'])]], fields=['*'])
+		if len(expenseChildList)!=0:
+			expenseList = frappe.get_all('Expense Claim Detail', filters=[["Expense Claim Detail","parent","=",str(expenseChildList[0]["parent"])]], fields=['*'])
+
+			# for filedelete in expenseList:
+			# 	if filedelete['custom_image'] not in [None,""," "]:
+			# 		doc = frappe.get_doc(doctype='File', file_url=filedelete['custom_image'])
+			# 		if doc:
+			# 			dl = frappe.delete_doc(doctype='File',name=doc.name,ignore_permissions=True,delete_permanently=True)
+
+
+			if len(expenseList)==1:
+				# if str(expenseChildList[0]["expense_type"]) in ["Mobile"]:
+				# 	reply={}
+				# 	frappe.local.response['http_status_code'] = 500
+				# 	reply["status_code"]="500"
+				# 	reply["message"]="You are not allow to delete this expense."
+				# 	return reply
+				# else:
 				removeOrderquery = """DELETE  FROM `tabExpense Claim` WHERE  name='"""+str(expenseChildList[0]["parent"])+"""'"""
 				frappe.db.sql(removeOrderquery)
-		else:
-			if str(expenseChildList[0]["expense_type"]) in ["Mobile"]:
-				reply={}
-				frappe.local.response['http_status_code'] = 500
-				reply["status_code"]="500"
-				reply["message"]="You are not allow to delete this expense."
-				reply["error1"]=traceback.format_exc()
-				return reply
 			else:
+				# if str(expenseChildList[0]["expense_type"]) in ["Mobile"]:
+				# 	reply={}
+				# 	frappe.local.response['http_status_code'] = 500
+				# 	reply["status_code"]="500"
+				# 	reply["message"]="You are not allow to delete this expense."
+				# 	reply["error1"]=traceback.format_exc()
+				# 	return reply
+				# else:
 				removeOrderquery = """DELETE  FROM `tabExpense Claim Detail` WHERE  name='"""+str(parameters['recordname'])+"""'"""
 				frappe.db.sql(removeOrderquery)
 
-		frappe.db.commit()
+			frappe.db.commit()
 	
-	return expenses_list(month=parameters['month'],year=parameters['year'],employee=parameters['employee'])
+			return expenses_list(month=parameters['month'],year=parameters['year'],employee=parameters['employee'])
+		
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_expenses','expenses_list')
+
+	return reply
 
 @frappe.whitelist(allow_guest=True)
 def expenses_add(**kwargs):
 
 	parameters=frappe._dict(kwargs)
 
-	#month,year,employee,expense_date,expensetype,expensediscription,expenseamount
-
-	reply={}
-	reply["message"]="list found."
-	reply["status_code"]="200"
+	reply=defaultResponseBody()
 	reply["data"]=[]
-	try:
+	reply["parameters"]=parameters
 
-		expenseList = frappe.get_all('Expense Claim', filters=[["Expense Claim","month","=",parameters['month']],
-													["Expense Claim","year","=",parameters['year']],
+	try:
+		expenseList = frappe.get_all('Expense Claim', filters=[["Expense Claim","custom_month","=",parameters['month']],
+													["Expense Claim","custom_year","=",parameters['year']],
 													["Expense Claim","employee","=",parameters['employee']],
 													], fields=['*'],
 													order_by="posting_date")
@@ -189,19 +151,20 @@ def expenses_add(**kwargs):
 				'expense_type': parameters['expensetype'],
 				'description': parameters['expensediscription'],
 				'amount': parameters['expenseamount'],
+				'sanctioned_amount':parameters['expenseamount'],
 			})
 
 			d = frappe.get_doc({
 				"doctype": "Expense Claim",
-				"year":str(parameters['year']),
-				"month":str(parameters['month']),
+				"custom_year":str(parameters['year']),
+				"custom_month":str(parameters['month']),
 				"employee":str(parameters['employee']),
 				"expense_approver":expenseaprrove.expense_approver,
 				"expenses":childexpenses
 #				"payable_account":"Provision for Salary - BSPL"
 			})
 			if d.insert(ignore_permissions=True):
-				reply = expenses_list(parameters['month'],parameters['year'],parameters['employee'])
+				reply = expenses_list(month=parameters['month'],year=parameters['year'],employee=parameters['employee'])
 				expenseChildList = frappe.get_all('Expense Claim Detail', filters=[["Expense Claim Detail","parent","=",str(d.name)]], fields=['*'],order_by="creation")
 				reply["data2"]=expenseChildList
 				return reply
@@ -214,14 +177,9 @@ def expenses_add(**kwargs):
 
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
-		reply["status_code"]="500"
-		# errotext="param: {} /n error: {}".format(str(employee),str(e))
-		# appErrorLogGloble("Expenses - expenses_add",errotext)
-		# appErrorLogGloble("Expenses - expenses_add",traceback.format_exc())
-		# reply["error"]=errotext
-		reply["message"]=str(e)
-		reply["error1"]=traceback.format_exc()
-		return reply
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_expenses','expenses_add')
+
+	return reply
 
 @frappe.whitelist(allow_guest=True)
 def expenses_add_child(recordname,month,year,employee,expense_date,expensetype,expensediscription,expenseamount):
@@ -233,6 +191,7 @@ def expenses_add_child(recordname,month,year,employee,expense_date,expensetype,e
 	'expense_type': expensetype,
 	'description': expensediscription,
 	'amount': expenseamount,
+	'sanctioned_amount':expenseamount,
 	'parent': parent.name,
 	'parenttype': 'Expense Claim',
 	'parentfield': 'expenses'})

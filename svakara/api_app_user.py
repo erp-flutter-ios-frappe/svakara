@@ -110,6 +110,7 @@ def getProfile(phone):
 	reply['user']={}
 	reply['distributor']={}
 	reply['delivery']={}
+	reply['employee']={}
 	reply['subscription'] = []
 	reply['pages'] = []
 
@@ -119,6 +120,11 @@ def getProfile(phone):
 		dil_list =frappe.db.sql(dil_query,as_dict=True)
 		if len(dil_list)!=0:
 			reply['delivery'] = dil_list[0]
+			if dil_list[0]['employee'] not in ['',None,'null']:
+				emp_query = "SELECT * from `tabEmployee` WHERE `name`='{}' AND `status`='Active'".format(dil_list[0]['employee'])
+				emp_list =frappe.db.sql(emp_query,as_dict=True)
+				if len(emp_list)!=0:
+					reply['employee'] = emp_list[0]
 
 
 		is_distributor = False

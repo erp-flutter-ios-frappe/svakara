@@ -152,6 +152,7 @@ def customer_detail(**kwargs):
 					addresslist.append(addDetail)
 
 				custmoerDetail['address']=addresslist
+				reply['address']=addresslist
 
 
 			contact_id=frappe.db.sql("""SELECT `tabContact`.name FROM `tabContact` inner join `tabDynamic Link` on `tabContact`.name=`tabDynamic Link`.parent WHERE `tabDynamic Link`.link_name=%s AND `tabDynamic Link`.link_doctype='Customer' AND `tabDynamic Link`.parenttype='Contact'""",custmoerDetail['name'])
@@ -170,6 +171,7 @@ def customer_detail(**kwargs):
 				# contact_list.append(conDetail)
 
 			custmoerDetail['contact']=contact_list
+			reply['contact']=contact_list
 
 
 
