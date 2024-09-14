@@ -9,7 +9,7 @@ from frappe.utils.password import update_password as _update_password
 from frappe.core.doctype.communication.email import make
 import requests
 from frappe.auth import LoginManager, CookieManager
-from svakara.globle import defaultResponseBody,globleLoginUser
+from svakara.globle import defaultResponseBody,globleLoginUser,appErrorLog
 import json
 import datetime
 from frappe.utils import getdate,nowdate
@@ -25,7 +25,7 @@ def customer_detail_cron():
 	query_so = "SELECT name FROM `tabCustomer` WHERE `disabled`='0'"
 	customerList = frappe.db.sql(query_so,as_dict=1)
 	for cust in customerList:
-		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(cust['name']),timeout=100000,customer=cust)
+		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(cust['name']),timeout=100000,customer=cust['name'])
 
 	frappe.enqueue(commitDatabase,queue='long',job_name="Commit database",timeout=100000)
 	return 'Cron start'
@@ -43,8 +43,6 @@ def customerDetailUpdate(customer):
 	reply["data"]={}
 
 	sessionuser = frappe.session.user
-	
-
 	frappe.set_user(globleLoginUser())
 
 	try:
@@ -57,11 +55,18 @@ def customerDetailUpdate(customer):
 
 		customerDetail = customerList[0]
 
+		# customerObject = frappe.get_doc("Customer",customerDetail['name'])
+
 
 		balance=GetBalance(customerDetail['name'])
 		update_query = "UPDATE `tabCustomer` SET `custom_balance`= '{}' WHERE `name`='{}'".format(balance,customerDetail['name'])
+		test = frappe.db.sql(update_query)
+		# frappe.db.commit()
+		# appErrorLog('b',update_query)
 		reply["balance"]=balance
+		# frappe.db.set_value("Customer", customerDetail['name'], "custom_balance", balance)
 
+		# customerObject.custom_balance = balance
 
 		# address_list=frappe.db.sql("""SELECT `tabAddress`.name FROM `tabAddress` inner join `tabDynamic Link` on `tabAddress`.name=`tabDynamic Link`.parent WHERE `tabDynamic Link`.link_name=%s AND `tabDynamic Link`.link_doctype='Customer' AND `tabDynamic Link`.parenttype='Address' AND `tabAddress`.disabled=0""",customerDetail['name'])
 		
@@ -88,6 +93,12 @@ def customerDetailUpdate(customer):
 			primayAddress = primayAddress.replace("<br><br>", "<br>")
 			update_query = "UPDATE `tabCustomer` SET `primary_address`='{}', `customer_primary_address`='{}' WHERE `name`='{}'".format(primayAddress,last_user_address,customerDetail['name'])
 			test = frappe.db.sql(update_query)
+
+			# customerObject.primary_address = primayAddress
+			# customerObject.customer_primary_address = last_user_address
+			# frappe.db.set_value("Customer", customerDetail['name'], "primary_address", primayAddress)
+			# frappe.db.set_value("Customer", customerDetail['name'], "customer_primary_address", last_user_address)
+
 
 			frappe.db.sql("""UPDATE `tabAddress` SET `custom_last_use_address`=1, `is_primary_address`=1 WHERE `name`='"""+last_user_address+"""' """)
 			# frappe.db.commit()
@@ -117,15 +128,15 @@ def customerDetailUpdate(customer):
 			
 			update_query = "UPDATE `tabCustomer` SET `mobile_no`='{}', `customer_primary_contact`='{}' WHERE `name`='{}'".format(last_user_phone,last_user_contact,customerDetail['name'])
 			test = frappe.db.sql(update_query)
+			# customerObject.mobile_no = last_user_phone
+			# customerObject.customer_primary_contact = last_user_contact
+			# frappe.db.set_value("Customer", customerDetail['name'], "mobile_no", last_user_phone)
+			# frappe.db.set_value("Customer", customerDetail['name'], "customer_primary_contact", last_user_contact)
+
 			
-			
-			
-		frappe.db.commit()
 
-
-
-
-
+		# customerObject.save()
+		# customerObject.save(ignore_permissions=True)
 		reply["status_code"]="200"
 		reply["message"]="Customer detail updated."
 
@@ -138,7 +149,8 @@ def customerDetailUpdate(customer):
 		reply["data"]={}
 		
 
-	frappe.set_user(sessionuser)	
+	frappe.set_user(sessionuser)
+	# frappe.db.commit()
 	return reply
 
 
