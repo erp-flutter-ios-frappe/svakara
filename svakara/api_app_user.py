@@ -274,9 +274,10 @@ def deleteAddress(name):
 	return reply
 
 @frappe.whitelist(allow_guest=True)
-def hideAddress(addressid):
+def hideAddress(addressID):
+
 	response={}
-	frappe.db.sql("""UPDATE `tabAddress` SET custom_hideaddress = 1 WHERE name= '""" + addressid +"""'  """)
+	frappe.db.sql("""UPDATE `tabAddress` SET `custom_hideaddress` = 1, `disabled`=1 WHERE `name`='"""+addressID+"""'  """)
 	frappe.db.commit()
 	frappe.local.response['http_status_code'] = 200
 	response["status"]=str(200)
@@ -285,31 +286,34 @@ def hideAddress(addressid):
 	return response
 
 @frappe.whitelist(allow_guest=True) 
-def setprimaryaddress(name,phone): 
+def setPrimaryAddress(name,phone): 
 
-	reply={}
+	reply=defaultResponseBody()
+
 	try:
 		filters = [
 			["Dynamic Link", "link_doctype", "=", "Customer"],
 			["Dynamic Link", "link_name", "=", phone]
 		]
-		address = frappe.get_all("Address", filters=filters, fields=['*']) or {}
+		address = frappe.get_all("Address", filters=filters, fields=['*'])
+
 		for addressname in address:
 			if addressname["name"] == name:
-				frappe.db.sql("""update tabAddress SET  custom_last_use_address = 1 WHERE name= '""" +addressname["name"] +"""'  """)
+				frappe.db.sql("""UPDATE `tabAddress` SET `custom_last_use_address`=1, `is_primary_address`=1 WHERE `name`='"""+addressname["name"]+"""' """)
 			else:
-				frappe.db.sql("""update tabAddress SET  custom_last_use_address = 0 WHERE name= '""" +addressname["name"] +"""'  """)
+				frappe.db.sql("""UPDATE `tabAddress` SET `custom_last_use_address`=0, `is_primary_address`=0 WHERE `name`='"""+addressname["name"]+"""' """)
 
 
-		addressreturn = frappe.get_all("Address", filters=filters, fields=['*']) or [{"name":"", "address_line1":"", "address_line2":"", "area":"", "city":"", "state":"", "country":"","pincode":"","custom_last_use_address":""}]
+		# addressreturn = frappe.get_all("Address", filters=filters, fields=['*'])
+		reply['data']=[]
 
-		return addressreturn
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
 		reply["status_code"]="500"
 		reply["message"]=str(e)
 		reply["message_traceback"]=traceback.format_exc()
-		return reply
+	
+	return reply
 
 @frappe.whitelist(allow_guest=True) 
 def set_vacation_mode(**kwargs): 

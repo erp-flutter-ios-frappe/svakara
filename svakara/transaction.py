@@ -20,6 +20,36 @@ from erpnext.accounts.report.utils import convert_to_presentation_currency, get_
 from erpnext.accounts.utils import get_account_currency
 import json
 from svakara.globle import appErrorLog,globleLoginUser
+import re
+from erpnext.accounts.report.general_ledger.general_ledger import execute as get_gl
+
+
+@frappe.whitelist(allow_guest=True)
+def statement_gl(**kwargs):
+
+	parameters=frappe._dict(kwargs)
+
+	reply={}
+	reply["status_code"]="200"
+	reply["message"]="Process"
+	reply["data"]=[]
+
+
+	temp ={
+		"company": parameters["company"],
+		"from_date": parameters["from_date"],
+		"to_date": parameters["to_date"],
+		"party": parameters["party"],
+		"party_type": "Customer",
+		"group_by": "Group by Voucher (Consolidated)",
+		"include_default_book_entries": 1,
+		"account_currency": 'INR',
+		"report_type": 'All',
+	}
+
+	result = get_gl(temp)
+	return result[1]
+
 
 @frappe.whitelist(allow_guest=True)
 def get_all_transaction_list(filters=None):

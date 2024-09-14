@@ -4,13 +4,15 @@ import frappe
 import traceback
 from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody
 from datetime import datetime
+from svakara.account_utils import GetBalance
+from svakara.globle import defaultResponseBody,globleLoginUser
 
 
 @frappe.whitelist(allow_guest=True)
 def customer_create(**kwargs):
 
 	parameters=frappe._dict(kwargs)
-    # allParamKeys = parameters.keys()
+
 	phoneNo = parameters['phone']
 	firstName = parameters['first_name']
 	lastName = parameters['last_name']
@@ -22,10 +24,18 @@ def customer_create(**kwargs):
 	reply['data']={}
 
 	try:
-		
+
+		query2="SELECT name FROM `tabCustomer` WHERE `name`='{}'".format(str(phoneNo))
+		customer_list = frappe.db.sql(query2,as_dict=1)
+		if len(customer_list)>0:
+			reply["message"]="customer is already created."
+			return reply
+
 		customerName = "{} {}".format(firstName,lastName)
-		qury = "INSERT INTO `tabUser` (`name`,`full_name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`,`creation`,`modified`,`modified_by`,`phone`,`mobile_no`) VALUES ('{}','{}', 'Guest', '0', '0', 'Website User', '{}', '1', '{}', '0', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(phoneNo,customerName, lastName,firstName,phoneNo+'@example.com', phoneNo,city,pincode,datetime.now(),datetime.now(),phoneNo,phoneNo,phoneNo)
-		frappe.db.sql(qury)
+		# qury = "INSERT INTO `tabUser` (`name`,`full_name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`,`creation`,`modified`,`modified_by`,`phone`,`mobile_no`) VALUES ('{}','{}', 'Guest', '0', '0', 'Website User', '{}', '1', '{}', '0', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(phoneNo,customerName, lastName,firstName,phoneNo+'@example.com', phoneNo,city,pincode,datetime.now(),datetime.now(),phoneNo,phoneNo,phoneNo)
+		# frappe.db.sql(qury)
+
+
 		# frappe.db.sql("""INSERT INTO `tabUser` (`name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`) VALUES ('"""+phoneNo+"""', 'Guest', '0', '0', 'Website User', '"""+lastName+"""', '1', '"""+firstName+"""', '0', '"""+phoneNo+"""@example.com', '"""+phoneNo+"""', '"""+city+"""', '"""+pincode+"""')""")			
 
 		# d = frappe.get_doc({
@@ -58,6 +68,7 @@ def customer_create(**kwargs):
 		# 	"__islocal": 1,
 		# 	"__unsaved": 1,
 		# 	"name": phoneNo,
+		# 	"mobile_no":phoneNo,
 		# 	"customer_name": "{} {}".format(firstName,lastName),
 		# 	"customer_group": 'Individual',
 		# 	"customer_type": 'Individual',
@@ -65,7 +76,14 @@ def customer_create(**kwargs):
 		# 	"custom_pincode": pincode,
 		# })
 		# doc_customer.insert(ignore_permissions=True)
+		# # contactAdd(doc_customer.name,phoneNo,firstName,lastName)
+		# frappe.db.commit()
 
+		# sessionuser = frappe.session.user
+		# frappe.set_user(globleLoginUser())
+		# frappe.rename_doc("Customer",doc_customer.name,phoneNo)
+		# frappe.set_user(sessionuser)
+		frappe.enqueue(contactAdd,queue='long',job_name="Customer detail update: {}".format(phoneNo),timeout=100000,customer=phoneNo,phoneNo=phoneNo,first_name=firstName,last_name=lastName)
 
 		# d = frappe.get_doc({
 		# 	"doctype": "DefaultValue",
@@ -98,6 +116,47 @@ def customer_create(**kwargs):
 	return reply
 
 
+@frappe.whitelist(allow_guest=True)
+def contactAdd(customer,phoneNo,first_name,last_name):
+	
+	reply=defaultResponseBody()
+	try:
+		d = frappe.get_doc({
+				"doctype":"Contact",
+				"customer": phoneNo,
+				"first_name":first_name,
+				"last_name":last_name,
+				"docstatus":0,
+				"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Contact","link_name":phoneNo,"docstatus":0,"parentfield":"links"}]
+			})
+		d.insert(ignore_permissions=True)
+
+
+		child = frappe.new_doc("Contact Phone")
+		child.update({'phone': phoneNo,
+		'is_primary_phone': 1,
+		'is_primary_mobile_no': 1,
+		'parent': d.name,
+		'parenttype': 'Contact',
+		'parentfield': 'phone_nos'})
+		d.phone_nos.append(child)
+		d.save(ignore_permissions=True)
+		frappe.db.commit()
+
+		frappe.db.sql("""UPDATE `tabCustomer` SET `customer_primary_contact`='"""+d.name+"""' WHERE `name`='"""+phoneNo+"""' """)
+
+		reply['message']="Contact added sucessfully"
+		reply['name']=d.name
+		return reply
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','contactAdd')
+
+	return reply
+
+
+
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -124,6 +183,7 @@ def customer_detail(**kwargs):
 	reply["data"]={}
 	reply['address']=[]
 	reply['contact']=[]
+	reply['balance']=[]
 
 	allParamKeys = parameters.keys()
 
@@ -132,9 +192,6 @@ def customer_detail(**kwargs):
 		reply["message"]="Name key parameter is missing."
 		return reply
 	
-
-
-
 	try:
 		query = "SELECT * FROM `tabCustomer` WHERE `name`='{}'".format(parameters['name'])
 		custmoerDetailList = frappe.db.sql(query,as_dict=1)
@@ -143,7 +200,10 @@ def customer_detail(**kwargs):
 			custmoerDetail['address']=[]
 			custmoerDetail['contact']=[]
 			
-			
+
+			custmoerDetail['balance']=GetBalance(custmoerDetailList[0]['name'])
+
+
 			address_id=frappe.db.sql("""SELECT `tabAddress`.name FROM `tabAddress` inner join `tabDynamic Link` on `tabAddress`.name=`tabDynamic Link`.parent WHERE `tabDynamic Link`.link_name=%s AND `tabDynamic Link`.link_doctype='Customer' AND `tabDynamic Link`.parenttype='Address' AND `tabAddress`.disabled=0""",custmoerDetail['name'])
 			if not len(address_id)==0:
 				addresslist = []

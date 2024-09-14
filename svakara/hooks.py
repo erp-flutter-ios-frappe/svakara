@@ -140,6 +140,7 @@ scheduler_events = {
 # 	],
 	"daily": [
 		"svakara.api_app_order.subscription_cron",
+		"svakara.cron.subscription_cron",
 	],
 # 	"hourly": [
 # 		"svakara.tasks.hourly"

@@ -10,7 +10,6 @@ from frappe.utils.password import update_password as _update_password
 from frappe.core.doctype.communication.email import make
 import requests
 from frappe.auth import LoginManager, CookieManager
-from erpnext.globle import globleUserLogin
 import json
 import datetime
 from frappe.utils import getdate,nowdate
