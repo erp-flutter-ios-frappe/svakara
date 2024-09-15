@@ -12,9 +12,10 @@
   "mobile",
   "section_break_u3urn",
   "disable",
-  "user",
+  "default",
   "customer",
   "distributor",
+  "user",
   "employee"
  ],
  "fields": [
@@ -60,19 +61,24 @@
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
-   "options": "User",
-   "reqd": 1
+   "options": "User"
   },
   {
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee ID",
    "options": "Employee"
+  },
+  {
+   "default": "0",
+   "fieldname": "default",
+   "fieldtype": "Check",
+   "label": "Default"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-15 11:55:47.999318",
+ "modified": "2024-09-15 19:07:34.596271",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Delivery Team",

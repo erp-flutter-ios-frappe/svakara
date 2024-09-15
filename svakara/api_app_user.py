@@ -10,6 +10,7 @@ from frappe.utils import add_days,nowdate
 from frappe.core.doctype.communication.email import make
 from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody
 import traceback
+from svakara.cron import customerDetailUpdate
 
 
 #Use in app
@@ -116,6 +117,7 @@ def getProfile(phone):
 
 	try:
 
+		is_distributor = False
 		dil_query = "SELECT * from `tabDelivery Team` WHERE `mobile`='{}' AND `disable`=0".format(phone)
 		dil_list =frappe.db.sql(dil_query,as_dict=True)
 		if len(dil_list)!=0:
@@ -127,12 +129,11 @@ def getProfile(phone):
 					reply['employee'] = emp_list[0]
 
 
-		is_distributor = False
-		dis_query = "SELECT * from `tabDistributor` WHERE `mobile`='{}' AND `disable`=0".format(phone)
-		dis_list =frappe.db.sql(dis_query,as_dict=True)
-		if len(dis_list)!=0:
-			reply['distributor'] = dis_list[0]
-			is_distributor = True
+			dis_query = "SELECT * from `tabDistributor` WHERE `mobile`='{}' AND `disable`=0".format(phone)
+			dis_list =frappe.db.sql(dis_query,as_dict=True)
+			if len(dis_list)!=0:
+				reply['distributor'] = dis_list[0]
+				is_distributor = True
 
 		if is_distributor:
 			customer_query = "SELECT * from `tabCustomer` WHERE `name`='{}'".format(dis_list[0]['customer'])
@@ -285,7 +286,7 @@ def hideAddress(addressID):
 	response["message"]="Delete Sucessfully"
 	return response
 
-@frappe.whitelist(allow_guest=True) 
+@frappe.whitelist(allow_guest=True)
 def setPrimaryAddress(name,phone): 
 
 	reply=defaultResponseBody()
@@ -314,6 +315,143 @@ def setPrimaryAddress(name,phone):
 		reply["message_traceback"]=traceback.format_exc()
 	
 	return reply
+
+
+@frappe.whitelist(allow_guest=True)
+def setPrimaryContact(phone,customer): 
+
+	reply=defaultResponseBody()
+
+	try:
+		filters = [
+			["Dynamic Link", "link_doctype", "=", "Customer"],
+			["Dynamic Link", "link_name", "=", customer]
+		]
+		address = frappe.get_all("Contact", filters=filters, fields=['*'])
+		for addressParent in address:
+
+			addressInner = frappe.get_all("Contact Phone", filters=[["Contact Phone", "parent", "=", addressParent["name"]]], fields=['*'])
+
+			for addressChild in addressInner:
+
+				if addressChild["phone"] == phone:
+					frappe.db.sql("""UPDATE `tabContact Phone` SET `is_primary_phone`=1, `is_primary_mobile_no`=1 WHERE `name`='"""+addressChild["name"]+"""' AND `phone`='"""+addressChild["phone"]+"""' """)
+				else:
+					frappe.db.sql("""UPDATE `tabContact Phone` SET `is_primary_phone`=0, `is_primary_mobile_no`=0 WHERE `name`='"""+addressChild["name"]+"""' AND `phone`='"""+addressChild["phone"]+"""' """)
+
+		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
+
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply["message_traceback"]=traceback.format_exc()
+	
+	return reply
+
+
+@frappe.whitelist(allow_guest=True)
+def ContactDelete(phone,customer):
+
+	reply=defaultResponseBody()
+	filters = [
+		["Dynamic Link", "link_doctype", "=", "Customer"],
+		["Dynamic Link", "link_name", "=", customer]
+	]
+	address = frappe.get_all("Contact", filters=filters, fields=['*'])
+
+	for addressParent in address:
+		addressInner = frappe.get_all("Contact Phone", filters=[["Contact Phone", "parent", "=", addressParent["name"]]], fields=['*'])
+		for addressChild in addressInner:
+			if addressChild["phone"] == phone:
+				frappe.db.sql("""DELETE FROM `tabContact Phone` WHERE `phone`='"""+addressChild["phone"]+"""' AND `parent`='"""+addressChild["parent"]+"""' """)
+
+	reply['message']="Delete contact"
+	return reply
+
+
+@frappe.whitelist(allow_guest=True)
+def ContactAddNew(phone,customer): 
+
+	reply=defaultResponseBody()
+
+	try:
+		filters = [
+			["Dynamic Link", "link_doctype", "=", "Customer"],
+			["Dynamic Link", "link_name", "=", customer]
+		]
+		address = frappe.get_all("Contact", filters=filters, fields=['*'])
+
+		#Is there is no contact create for customer then create it first
+		if len(address)==0:
+			customer = frappe.get_doc("Customer", customer)
+			first_name = ""
+			last_name = ""
+			full_name = str(customer.customer_name).split(' ')
+
+			first_name = full_name[0]
+			if len(full_name)>=2:
+				last_name = full_name[1]
+
+
+			d = frappe.get_doc({
+					"doctype":"Contact",
+					"customer": phone,
+					"first_name":first_name,
+					"last_name":last_name,
+					"docstatus":0,
+					"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Contact","link_name":phone,"docstatus":0,"parentfield":"links"}]
+				})
+			contactDocument = d.insert(ignore_permissions=True)
+			frappe.db.commit()
+
+
+		#Get all contact for the customer
+		contactLst = frappe.get_all("Contact", filters=filters, fields=['*'])
+
+		if len(contactLst)==0:
+			reply['message']="No contact forund for the customer"
+			frappe.local.response['http_status_code'] = 500
+			reply["status_code"]="500"
+			return reply
+
+		foundNumber = False
+		for addressParent in contactLst:
+			addressInner = frappe.get_all("Contact Phone", filters=[["Contact Phone", "parent", "=", addressParent["name"]]], fields=['*'])
+			for addressChild in addressInner:
+				if addressChild["phone"] == phone:
+					foundNumber = True
+					frappe.db.sql("""UPDATE `tabContact Phone` SET `is_primary_phone`=1, `is_primary_mobile_no`=1 WHERE `name`='"""+addressChild["name"]+"""' AND `phone`='"""+addressChild["phone"]+"""' """)
+				else:
+					frappe.db.sql("""UPDATE `tabContact Phone` SET `is_primary_phone`=0, `is_primary_mobile_no`=0 WHERE `name`='"""+addressChild["name"]+"""' AND `phone`='"""+addressChild["phone"]+"""' """)
+
+
+		if not foundNumber:
+			contact = frappe.get_doc("Contact",contactLst[0]['name'])
+
+			child = frappe.new_doc("Contact Phone")
+			child.update({'phone': phone,
+			'is_primary_phone': 1,
+			'is_primary_mobile_no': 1,
+			'parent': contact.name,
+			'parenttype': 'Contact',
+			'parentfield': 'phone_nos'})
+			contact.phone_nos.append(child)
+			contact.save(ignore_permissions=True)
+			frappe.db.commit()
+
+
+		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
+		reply["message"]='Contact add sucessfully'
+
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply["message_traceback"]=traceback.format_exc()
+	
+	return reply
+
 
 @frappe.whitelist(allow_guest=True) 
 def set_vacation_mode(**kwargs): 

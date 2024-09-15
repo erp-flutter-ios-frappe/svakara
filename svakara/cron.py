@@ -123,9 +123,12 @@ def customerDetailUpdate(customer):
 					last_user_phone = contect['phone']
 
 		reply["customer_primary_contact"]=last_user_contact
+		# appErrorLog("Start updateing","")
+		# appErrorLog("last_user_contact",last_user_contact)
+		# appErrorLog("last_user_phone",last_user_phone)
 
-		if last_user_contact != customerDetail['customer_primary_contact']:
-			
+		if last_user_phone != customerDetail['mobile_no']:
+			# appErrorLog("Contact update in customer","")
 			update_query = "UPDATE `tabCustomer` SET `mobile_no`='{}', `customer_primary_contact`='{}' WHERE `name`='{}'".format(last_user_phone,last_user_contact,customerDetail['name'])
 			test = frappe.db.sql(update_query)
 			# customerObject.mobile_no = last_user_phone

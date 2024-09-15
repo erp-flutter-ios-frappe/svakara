@@ -9,11 +9,13 @@
   "basic_info_section",
   "full_name",
   "mobile",
+  "distributor_first_name",
+  "distributor_last_name",
   "column_break_hxoe",
   "disable",
-  "user",
   "customer",
-  "warehouse"
+  "warehouse",
+  "user"
  ],
  "fields": [
   {
@@ -25,7 +27,7 @@
    "fieldname": "full_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Full Name",
+   "label": "Full Name (Company Name)",
    "reqd": 1
   },
   {
@@ -37,8 +39,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "User",
-   "options": "User",
-   "reqd": 1
+   "options": "User"
   },
   {
    "fieldname": "warehouse",
@@ -64,12 +65,22 @@
    "default": "0",
    "fieldname": "disable",
    "fieldtype": "Check",
-   "label": "disable"
+   "label": "Disable"
+  },
+  {
+   "fieldname": "distributor_first_name",
+   "fieldtype": "Data",
+   "label": "Distributor First Name"
+  },
+  {
+   "fieldname": "distributor_last_name",
+   "fieldtype": "Data",
+   "label": "Distributor Last Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-13 17:05:34.160485",
+ "modified": "2024-09-15 19:13:32.588509",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Distributor",

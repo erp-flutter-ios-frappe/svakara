@@ -121,16 +121,27 @@ def contactAdd(customer,phoneNo,first_name,last_name):
 	
 	reply=defaultResponseBody()
 	try:
-		d = frappe.get_doc({
-				"doctype":"Contact",
-				"customer": phoneNo,
-				"first_name":first_name,
-				"last_name":last_name,
-				"docstatus":0,
-				"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Contact","link_name":phoneNo,"docstatus":0,"parentfield":"links"}]
-			})
-		d.insert(ignore_permissions=True)
 
+
+		filters = [
+			["Dynamic Link", "link_doctype", "=", "Customer"],
+			["Dynamic Link", "link_name", "=", customer]
+		]
+		contactList = frappe.get_all("Contact", filters=filters, fields=['*'])
+
+		contactDocument = ''
+		if len(contactList)==0:
+			d = frappe.get_doc({
+					"doctype":"Contact",
+					"customer": phoneNo,
+					"first_name":first_name,
+					"last_name":last_name,
+					"docstatus":0,
+					"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Contact","link_name":phoneNo,"docstatus":0,"parentfield":"links"}]
+				})
+			contactDocument = d.insert(ignore_permissions=True)
+		else:
+			contactDocument = frappe.get_doc("Contact",contactList[0]['name'])
 
 		child = frappe.new_doc("Contact Phone")
 		child.update({'phone': phoneNo,
@@ -139,8 +150,8 @@ def contactAdd(customer,phoneNo,first_name,last_name):
 		'parent': d.name,
 		'parenttype': 'Contact',
 		'parentfield': 'phone_nos'})
-		d.phone_nos.append(child)
-		d.save(ignore_permissions=True)
+		contactDocument.phone_nos.append(child)
+		contactDocument.save(ignore_permissions=True)
 		frappe.db.commit()
 
 		frappe.db.sql("""UPDATE `tabCustomer` SET `customer_primary_contact`='"""+d.name+"""' WHERE `name`='"""+phoneNo+"""' """)

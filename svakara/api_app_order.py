@@ -1099,7 +1099,7 @@ def sales_order_list(**kwargs):
 
 	try:
 		# salesorder_list=frappe.get_all('Sales Order',filters=[["Sales Order","delivery_date","<",nowdate()],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",frappe.session.user]],fields=['*'],limit_page_length=100,order_by="delivery_date desc")
-		salesorder_list=frappe.get_all('Sales Order',filters=[["Sales Order","delivery_date",">=",parameters['start_date']],["Sales Order","delivery_date","<=",parameters['end_date']],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",parameters['customer']]],fields=['delivery_date','grand_total','status','name'],order_by="delivery_date desc")
+		salesorder_list=frappe.get_all('Sales Order',filters=[["Sales Order","delivery_date",">=",parameters['start_date']],["Sales Order","delivery_date","<=",parameters['end_date']],["Sales Order","status","!=","Cancelled"],["Sales Order","customer","=",parameters['customer']]],fields=['delivery_date','grand_total','status','name','total_qty'],order_by="delivery_date desc")
 		reply["data"]=salesorder_list
 
 	except Exception as e:
