@@ -214,7 +214,6 @@ def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone
 					"doctype":"Address",
 					"customer": phone,
 					"address_line1":address1,
-					# "address_line2":'{}, {}'.format(area,address2),
 					"address_line2":'{}'.format(address2),
 					"custom_area":area,
 					"city":city,
@@ -264,6 +263,7 @@ def profileupdate(address1,address2,pincode,area,city,state,name,isprimary,phone
 
 @frappe.whitelist() 
 def deleteAddress(name):
+	
 	reply=defaultResponseBody()
 	try:
 		frappe.db.sql("""DELETE FROM tabAddress WHERE name= '""" + name +"""'  """)
@@ -400,7 +400,7 @@ def ContactAddNew(phone,customer):
 					"first_name":first_name,
 					"last_name":last_name,
 					"docstatus":0,
-					"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Contact","link_name":phone,"docstatus":0,"parentfield":"links"}]
+					"links": [{"link_doctype":"Customer","doctype":"Dynamic Link","idx":1,"parenttype":"Contact","link_name":customer.name,"docstatus":0,"parentfield":"links"}]
 				})
 			contactDocument = d.insert(ignore_permissions=True)
 			frappe.db.commit()
