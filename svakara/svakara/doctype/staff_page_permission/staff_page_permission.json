@@ -1,33 +1,31 @@
 {
  "actions": [],
- "autoname": "field:user",
+ "autoname": "field:customer",
  "creation": "2024-08-13 16:28:04.119297",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "user",
+  "customer",
   "pages"
  ],
  "fields": [
-  {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "User",
-   "options": "User",
-   "reqd": 1,
-   "unique": 1
-  },
   {
    "fieldname": "pages",
    "fieldtype": "Table",
    "label": "Pages",
    "options": "Staff Page Permission Child"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-13 16:34:05.015342",
+ "modified": "2024-09-16 14:49:33.199531",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Staff Page Permission",

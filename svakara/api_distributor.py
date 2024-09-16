@@ -83,7 +83,7 @@ def distributor_create(**kwargs):
 		frappe.enqueue(ContactAddNew,queue='long',job_name="Create contact for customer: {}".format(customer['name']),timeout=100000,phone=phone,customer=customer['name'])
 		
 
-		query2="SELECT * FROM `tabWarehouse` WHERE `name`='{}'".format(ditributorUniqueNo)
+		query2="SELECT * FROM `tabWarehouse` WHERE `warehouse_name`='{}'".format(ditributorUniqueNo)
 		warehouse_list = frappe.db.sql(query2,as_dict=1)
 		if len(warehouse_list)==0:
 			
@@ -109,19 +109,99 @@ def distributor_create(**kwargs):
 		warehouse = warehouse_list[0]
 
 
-		p = frappe.get_doc({
-			"docstatus":0,
-			"doctype":"Distributor",
-			"name":"New Distributor 1",
-			"__islocal":1,
-			"__unsaved":1,
-			"full_name":company_name,
-			"mobile":phone,
-			"distributor_first_name":first_name,
-			"distributor_last_name":last_name,
-			"customer":customer['name'],
-			"warehouse":warehouse['name'],})
-		p.insert(ignore_permissions=True)
+		query2="SELECT * FROM `tabDistributor` WHERE `mobile`='{}'".format(phone)
+		distributor_list = frappe.db.sql(query2,as_dict=1)
+		if len(distributor_list)==0:
+			p = frappe.get_doc({
+				"docstatus":0,
+				"doctype":"Distributor",
+				"name":"New Distributor 1",
+				"__islocal":1,
+				"__unsaved":1,
+				"full_name":company_name,
+				"mobile":phone,
+				"distributor_first_name":first_name,
+				"distributor_last_name":last_name,
+				"customer":customer['name'],
+				"warehouse":warehouse['name'],})
+			p.insert(ignore_permissions=True)
+			frappe.db.commit()
+			query2="SELECT * FROM `tabDistributor` WHERE `mobile`='{}'".format(phone)
+			distributor_list = frappe.db.sql(query2,as_dict=1)
+
+		if len(distributor_list)==0:
+			reply["message"]="destributor not found/created."
+			return reply
+
+		distributor = distributor_list[0]
+
+
+
+
+		query2="SELECT * FROM `tabDelivery Team` WHERE `distributor`='{}' AND `customer`='{}'".format(distributor['name'],customer['name'])
+		dl_list = frappe.db.sql(query2,as_dict=1)
+		if len(dl_list)==0:
+			dl = frappe.get_doc({
+				"docstatus":0,
+				"doctype":"Delivery Team",
+				"name":"New Delivery Team 1",
+				"__islocal":1,
+				"__unsaved":1,
+				"employee_name":company_name,
+				"customer":customer['name'],
+				"distributor":distributor['name'],
+				"mobile":phone
+			})
+			dl.insert(ignore_permissions=True)
+			frappe.db.commit()
+
+
+
+
+
+		#Page Permission
+
+		query2="SELECT * FROM `tabStaff Page Permission` WHERE `customer`='{}'".format(customer['name'])
+		spp_list = frappe.db.sql(query2,as_dict=1)
+		if len(spp_list)==0:
+			pagePermission = frappe.get_doc({
+				"docstatus":0,
+				"doctype":"Staff Page Permission",
+				"name":"New Staff Page Permission 1",
+				"__islocal":1,
+				"__unsaved":1,
+				"customer":customer['name'],
+			})
+			pp = pagePermission.insert(ignore_permissions=True)
+			frappe.db.commit()
+			query2="SELECT * FROM `tabStaff Page Permission` WHERE `customer`='{}'".format(customer['name'])
+			spp_list = frappe.db.sql(query2,as_dict=1)
+
+		if len(spp_list)==0:
+			reply["message"]="Page permission not found"
+			return reply
+
+		spp = spp_list[0]
+
+
+
+
+
+		pp_doc = frappe.get_doc('Staff Page Permission',spp.name)
+
+		child = frappe.new_doc("Staff Page Permission Child")
+		child.update({'page': 'Customer Create',
+		'image': 'http://104.197.164.49/files/customer_create_new.gif',
+		'title': 'Create Customer',
+		'parent': pp_doc.name,
+		'parenttype': 'Staff Page Permission',
+		'parentfield': 'pages'})
+		pp_doc.pages.append(child)
+			
+		pp_doc.save(ignore_permissions=True)
+
+
+
 
 		reply["message"]="Distributor created."
 

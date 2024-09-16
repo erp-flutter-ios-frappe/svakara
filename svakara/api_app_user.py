@@ -135,11 +135,14 @@ def getProfile(phone):
 				reply['distributor'] = dis_list[0]
 				is_distributor = True
 
+		CustomerName = ""
+
 		if is_distributor:
 			customer_query = "SELECT * from `tabCustomer` WHERE `name`='{}'".format(dis_list[0]['customer'])
 			customer_list =frappe.db.sql(customer_query,as_dict=True)
 			if len(customer_list)!=0:
 				reply['customer'] = customer_list[0]
+				CustomerName = customer_list[0]['name']
 
 			user_query = "SELECT * from `tabUser` WHERE `name`='{}'".format(dis_list[0]['user'])
 			user_list =frappe.db.sql(user_query,as_dict=True)
@@ -151,6 +154,7 @@ def getProfile(phone):
 			customer_list =frappe.db.sql(customer_query,as_dict=True)
 			if len(customer_list)!=0:
 				reply['customer'] = customer_list[0]
+				CustomerName = customer_list[0]['name']
 
 			user_query = "SELECT * from `tabUser` WHERE `name`='{}'".format(phone)
 			user_list =frappe.db.sql(user_query,as_dict=True)
@@ -169,11 +173,11 @@ def getProfile(phone):
 		query_subscription = "SELECT * from `tabSubscription Item` WHERE `customer`='{}' AND `disable`='0'".format(phone)
 		reply['subscription'] = frappe.db.sql(query_subscription,as_dict=True)
 
-		pages_query = "SELECT * FROM `tabStaff Page Permission Child` WHERE `parent`='{}'".format(phone)
+		pages_query = "SELECT * FROM `tabStaff Page Permission Child` WHERE `parent`='{}'".format(CustomerName)
 		reply['pages'] =frappe.db.sql(pages_query,as_dict=True)
 
 		return reply
-			
+
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
 		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_app_user','getProfile')
@@ -305,6 +309,8 @@ def setPrimaryAddress(name,phone):
 				frappe.db.sql("""UPDATE `tabAddress` SET `custom_last_use_address`=0, `is_primary_address`=0 WHERE `name`='"""+addressname["name"]+"""' """)
 
 
+
+		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
 		# addressreturn = frappe.get_all("Address", filters=filters, fields=['*'])
 		reply['data']=[]
 
@@ -315,6 +321,44 @@ def setPrimaryAddress(name,phone):
 		reply["message_traceback"]=traceback.format_exc()
 	
 	return reply
+
+
+
+
+
+
+@frappe.whitelist(allow_guest=True)
+def setPrimaryAddressNew(addressName,customer): 
+
+	reply=defaultResponseBody()
+
+	try:
+		filters = [
+			["Dynamic Link", "link_doctype", "=", "Customer"],
+			["Dynamic Link", "link_name", "=", customer]
+		]
+		address = frappe.get_all("Address", filters=filters, fields=['*'])
+
+		for addressname in address:
+			if addressname["name"] == addressName:
+				frappe.db.sql("""UPDATE `tabAddress` SET `custom_last_use_address`=1, `is_primary_address`=1 WHERE `name`='"""+addressname["name"]+"""' """)
+			else:
+				frappe.db.sql("""UPDATE `tabAddress` SET `custom_last_use_address`=0, `is_primary_address`=0 WHERE `name`='"""+addressname["name"]+"""' """)
+
+
+
+		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
+		# addressreturn = frappe.get_all("Address", filters=filters, fields=['*'])
+		reply['data']=[]
+
+	except Exception as e:
+		frappe.local.response['http_status_code'] = 500
+		reply["status_code"]="500"
+		reply["message"]=str(e)
+		reply["message_traceback"]=traceback.format_exc()
+	
+	return reply
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -339,7 +383,7 @@ def setPrimaryContact(phone,customer):
 				else:
 					frappe.db.sql("""UPDATE `tabContact Phone` SET `is_primary_phone`=0, `is_primary_mobile_no`=0 WHERE `name`='"""+addressChild["name"]+"""' AND `phone`='"""+addressChild["phone"]+"""' """)
 
-		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
+		customerDetailUpdate(customer=customer)
 
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
