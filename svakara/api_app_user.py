@@ -310,7 +310,7 @@ def setPrimaryAddress(name,phone):
 
 
 
-		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
+		# frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer),timeout=100000,customer=customer)
 		# addressreturn = frappe.get_all("Address", filters=filters, fields=['*'])
 		reply['data']=[]
 

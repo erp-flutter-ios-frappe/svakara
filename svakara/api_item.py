@@ -12,7 +12,7 @@ from svakara.cron import customerDetailUpdate
 
 
 @frappe.whitelist(allow_guest=True)
-def distributor_create(**kwargs):
+def item_create(**kwargs):
 
 	parameters=frappe._dict(kwargs)
 	reply=defaultResponseBody()
@@ -21,33 +21,27 @@ def distributor_create(**kwargs):
 	keysList = list(parameters.keys())
 
 
-	if 'phone' not in keysList:
-		reply["message"]="Phone number not found in parameters."
+	if 'item_name' not in keysList:
+		reply["message"]="Item name not found in parameters."
 		return reply
 
-	if 'first_name' not in keysList:
-		reply["message"]="First name not found in parameters."
+	if 'item_group' not in keysList:
+		reply["message"]="Item group not found in parameters."
 		return reply
 
-	if 'last_name' not in keysList:
-		reply["message"]="Last name not found in parameters."
+	if 'item_type' not in keysList:
+		reply["message"]="Item type not found in parameters."
 		return reply
 
-	if 'city' not in keysList:
-		reply["message"]="City not found in parameters."
+	if 'uom' not in keysList:
+		reply["message"]="UOM not found in parameters."
 		return reply
 
-	if 'pin_code' not in keysList:
-		reply["message"]="Pincode not found in parameters."
+	if 'distributor' not in keysList:
+		reply["message"]="Distributor not found in parameters."
 		return reply		
 
 
-	phone = parameters['phone']
-	first_name = parameters['first_name']
-	last_name = parameters['last_name']
-	company_name = parameters['company_name']
-	city = parameters['city']
-	pin_code = parameters['pin_code']
 
 
 	if company_name in ['',' ',None]:
