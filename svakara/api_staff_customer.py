@@ -12,26 +12,71 @@ from svakara.account_utils import GetBalance
 def customer_create(**kwargs):
 
 	parameters=frappe._dict(kwargs)
+	keysList = list(parameters.keys())
+	reply=defaultResponseBody()
+	reply['data']={}
+
+
+	if 'phone' not in keysList:
+		reply["message"]="Phone not found in parameters."
+		return reply
+
+	if 'first_name' not in keysList:
+		reply["message"]="First name found in parameters."
+		return reply
+
+	if 'last_name' not in keysList:
+		reply["message"]="Last name not found in parameters."
+		return reply
+
+	if 'city' not in keysList:
+		reply["message"]="City not found in parameters."
+		return reply
+
+	if 'pincode' not in keysList:
+		reply["message"]="Pincode not found in parameters."
+		return reply								
+
+	if 'distributor' not in keysList:
+		reply["message"]="Distributor not found in parameters."
+		return reply	
+
+	nameKey = ""
+	if 'name' in keysList:
+		nameKey = parameters['name']
+
+
+
+
+
+
+	customerName = "{}{}".format(parameters['distributor'],parameters['phone'])
+
 
 	phoneNo = parameters['phone']
 	firstName = parameters['first_name']
 	lastName = parameters['last_name']
 	city = parameters['city']
 	pincode = parameters['pincode']
+	customerFullNameName = "{} {}".format(firstName,lastName)
 
 
-	reply=defaultResponseBody()
-	reply['data']={}
+
+	if nameKey!="":
+		frappe.db.sql("""UPDATE `tabCustomer` SET `customer_name`='"""+customerFullNameName+"""',`custom_city`='"""+city+"""',`custom_pincode`='"""+pincode+"""',`mobile_no`='"""+phoneNo+"""' WHERE `name`='"""+nameKey+"""' """)
+		reply["message"]="Customer updated."
+		reply['data']=frappe.get_doc('Customer',nameKey)
+		return reply
+
 
 	try:
-
-		query2="SELECT name FROM `tabCustomer` WHERE `name`='{}'".format(str(phoneNo))
+		query2="SELECT name FROM `tabCustomer` WHERE `name`='{}'".format(customerName)
 		customer_list = frappe.db.sql(query2,as_dict=1)
 		if len(customer_list)>0:
 			reply["message"]="customer is already created."
+			reply["data"]=customer_list[0]
 			return reply
 
-		customerName = "{} {}".format(firstName,lastName)
 		# qury = "INSERT INTO `tabUser` (`name`,`full_name`, `owner`, `docstatus`, `idx`, `user_type`, `last_name`, `thread_notify`, `first_name`, `login_after`, `email`, `username`, `location`, `bio`,`creation`,`modified`,`modified_by`,`phone`,`mobile_no`) VALUES ('{}','{}', 'Guest', '0', '0', 'Website User', '{}', '1', '{}', '0', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')".format(phoneNo,customerName, lastName,firstName,phoneNo+'@example.com', phoneNo,city,pincode,datetime.now(),datetime.now(),phoneNo,phoneNo,phoneNo)
 		# frappe.db.sql(qury)
 
@@ -59,7 +104,7 @@ def customer_create(**kwargs):
 		# return reply
 
 		
-		qury = "INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`,`creation`,`modified`,`modified_by`,`mobile_no`) VALUES ('{}', '{}', '0',  '0', 'CUST-', '0', '{}', 'India','Individual', 'Individual', '0', '{}', '{}', '{}', '{}', '{}', '{}')".format(phoneNo, phoneNo, customerName, city, pincode,datetime.now(),datetime.now(),phoneNo,phoneNo)
+		qury = "INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`,`creation`,`modified`,`modified_by`,`mobile_no`) VALUES ('{}', '{}', '0',  '0', 'CUST-', '0', '{}', 'India','Individual', 'Individual', '0', '{}', '{}', '{}', '{}', '{}', '{}')".format(phoneNo, phoneNo, customerFullNameName, city, pincode,datetime.now(),datetime.now(),phoneNo,phoneNo)
 		frappe.db.sql(qury)
 		# frappe.db.sql("""INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`,`creation`,`modified`,`modified_by`) VALUES ('"""+phoneNo+"""', '"""+phoneNo+"""', '0',  '0', 'CUST-', '0', '"""+customerName+"""', 'India','Individual', 'Individual', '0', '"""+city+"""', '"""+pincode+"""')""")		
 		# doc_customer = frappe.get_doc({
@@ -83,7 +128,7 @@ def customer_create(**kwargs):
 		# frappe.set_user(globleLoginUser())
 		# frappe.rename_doc("Customer",doc_customer.name,phoneNo)
 		# frappe.set_user(sessionuser)
-		frappe.enqueue(contactAdd,queue='long',job_name="Customer detail update: {}".format(phoneNo),timeout=100000,customer=phoneNo,phoneNo=phoneNo,first_name=firstName,last_name=lastName)
+		frappe.enqueue(contactAdd,queue='long',job_name="Customer detail update: {}".format(customerName),timeout=100000,customer=customerName,phoneNo=phoneNo,first_name=firstName,last_name=lastName)
 
 		# d = frappe.get_doc({
 		# 	"doctype": "DefaultValue",
@@ -107,6 +152,11 @@ def customer_create(**kwargs):
 		# 	"allow":"Customer",
 		# 	"for_value":phoneNo})        
 		# p.insert(ignore_permissions=True)
+
+		query2="SELECT name FROM `tabCustomer` WHERE `name`='{}'".format(customerName)
+		customer_list = frappe.db.sql(query2,as_dict=1)
+		if len(customer_list)>0:
+			reply["data"]=customer_list[0]
 		reply["message"]="customer created"
 
 	except Exception as e:

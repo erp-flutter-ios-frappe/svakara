@@ -15,7 +15,9 @@
   "disable",
   "customer",
   "warehouse",
-  "user"
+  "user",
+  "section_break_ifdv",
+  "item"
  ],
  "fields": [
   {
@@ -76,11 +78,22 @@
    "fieldname": "distributor_last_name",
    "fieldtype": "Data",
    "label": "Distributor Last Name"
+  },
+  {
+   "fieldname": "section_break_ifdv",
+   "fieldtype": "Section Break",
+   "label": "Item List"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Table",
+   "ignore_user_permissions": 1,
+   "options": "Distributor Item"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-15 19:13:32.588509",
+ "modified": "2024-09-17 11:06:33.911497",
  "modified_by": "Administrator",
  "module": "Svakara",
  "name": "Distributor",

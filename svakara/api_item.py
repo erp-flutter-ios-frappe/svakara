@@ -2,11 +2,29 @@ from __future__ import unicode_literals
 from frappe import throw, msgprint, _
 import frappe
 import traceback
-from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody
-from datetime import datetime
-from svakara.api_app_user import ContactAddNew
-from svakara.account_utils import GetBalance
-from svakara.cron import customerDetailUpdate
+from svakara.globle import appErrorLog,defaultResponseBody,defaultResponseErrorBody,globleLoginUser
+
+
+
+@frappe.whitelist(allow_guest=True)
+def item_list(**kwargs):
+	
+	parameters=frappe._dict(kwargs)
+	reply=defaultResponseBody()
+	keysList = list(parameters.keys())
+
+	if 'distributor' not in keysList:
+		reply["message"]="Distributor not found in parameters."
+		return reply
+	
+	query2="SELECT * FROM `tabItem` WHERE `item_code` IN (SELECT item_code FROM `tabDistributor Item` WHERE `parent`='{}')".format(parameters['distributor'])
+	item_list_previous = frappe.db.sql(query2,as_dict=1)
+
+	reply['data']=item_list_previous
+
+
+	return reply
+
 
 
 
@@ -37,370 +55,103 @@ def item_create(**kwargs):
 		reply["message"]="UOM not found in parameters."
 		return reply
 
+	if 'rate' not in keysList:
+		reply["message"]="Rate not found in parameters."
+		return reply
+	
 	if 'distributor' not in keysList:
 		reply["message"]="Distributor not found in parameters."
-		return reply		
+		return reply	
+
+	nameKey = ""
+	if 'name' in keysList:
+		nameKey = parameters['name']
 
 
 
 
-	if company_name in ['',' ',None]:
-		company_name = "{} {}".format(first_name,last_name)
-	
-	reply['data']={}
+
+	query2="SELECT name FROM `tabDistributor Item` WHERE `parent`='{}'".format(parameters['distributor'])
+	item_list_previous = frappe.db.sql(query2,as_dict=1)
+
+
+	item_co = ""
+	for i in parameters['item_name'].split(' '):
+		item_co="{}{}".format(item_co,i[0].upper())
+
+	item_code = "{}{}{}".format(parameters['distributor'],item_co,len(item_list_previous)+1)
+
+
+	query2="SELECT name FROM `tabItem` WHERE `item_code`='{}'".format(item_code)
+	item_list = frappe.db.sql(query2,as_dict=1)
+	if len(item_list)!=0:
+		reply['message']="Item is already present."
+		return reply
+
+	sessionuser = frappe.session.user
+	frappe.set_user(globleLoginUser())
+
+
+	if nameKey!="":
+		frappe.db.sql("""UPDATE `tabItem` SET `description`='"""+parameters['description']+"""',`standard_rate`='"""+parameters['rate']+"""',`custom_pack_size`='"""+parameters['custom_pack_size']+"""',`stock_uom`='"""+parameters['uom']+"""',`item_name`='"""+parameters['item_name']+"""',`item_group`='"""+parameters['item_group']+"""',`custom_item_type`='"""+parameters['item_type']+"""' WHERE `name`='"""+nameKey+"""' """)
+		reply["message"]="Item updated."
+		reply['data']=frappe.get_doc('Item',nameKey)
+
+		return reply
+
+
+
 
 	try:
 
-		query2="SELECT name FROM `tabDistributor` WHERE `name`='{}'".format(str(phone))
-		distribotor_list = frappe.db.sql(query2,as_dict=1)
-		if len(distribotor_list)!=0:
-			reply["message"]="Distributor is already created. Ditributor ID : {}".format(distribotor_list[0]['name'])
-			return reply
+		p = frappe.get_doc({
+			"docstatus":0,
+			"doctype":"Item",
+			"name":"New Item 1",
+			"__islocal":1,
+			"__unsaved":1,
+			"item_code":item_code,
+			"item_name":parameters['item_name'],
+			"company":frappe.defaults.get_user_default("Company"),
+			"item_group":parameters['item_group'],
+			"custom_item_type":parameters['item_type'],
+			"stock_uom":parameters['uom'],
+			"valuation_rate":parameters['rate'],
+			"standard_rate":parameters['rate'],
+			"custom_subscriber_rate":parameters['rate'],
+			"description":parameters['description'],
+			"custom_pack_size":parameters['custom_pack_size'],
+			"is_stock_item":0,
+			"is_sales_item":1
+		})
+		itemAdded = p.insert(ignore_permissions=True)
+		reply['data']=itemAdded
 		
 
-		##  Customer created
-		ditributorUniqueNo = "DIST{}".format(phone)
-		query2="SELECT * FROM `tabCustomer` WHERE `name`='{}'".format(ditributorUniqueNo)
-		customer_list = frappe.db.sql(query2,as_dict=1)
-		if len(customer_list)==0:
-			qury = "INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`,`creation`,`modified`,`modified_by`,`mobile_no`) VALUES ('{}', '{}', '0',  '0', 'CUST-', '0', '{}', 'India','Individual', 'Individual', '0', '{}', '{}', '{}', '{}', '{}', '{}')".format(ditributorUniqueNo, phone, company_name, city, pin_code,datetime.now(),datetime.now(),phone,phone)
-			frappe.db.sql(qury)
-			frappe.db.commit()
-			query2="SELECT * FROM `tabCustomer` WHERE `name`='{}'".format(ditributorUniqueNo)
-			customer_list = frappe.db.sql(query2,as_dict=1)
-
-		if len(customer_list)==0:
-			reply["message"]="Customer not found."
-			return reply
-
-		customer = customer_list[0]
-
-		#Create Contact
-		frappe.enqueue(ContactAddNew,queue='long',job_name="Create contact for customer: {}".format(customer['name']),timeout=100000,phone=phone,customer=customer['name'])
+		doc_distributor = frappe.get_doc('Distributor',parameters['distributor'])
 		
-
-		query2="SELECT * FROM `tabWarehouse` WHERE `warehouse_name`='{}'".format(ditributorUniqueNo)
-		warehouse_list = frappe.db.sql(query2,as_dict=1)
-		if len(warehouse_list)==0:
-			
-			p = frappe.get_doc({
-				"docstatus":0,
-				"doctype":"Warehouse",
-				"name":"New Warehouse 1",
-				"__islocal":1,
-				"__unsaved":1,
-				"warehouse_name":ditributorUniqueNo,
-				"name":ditributorUniqueNo,
-				"company":frappe.defaults.get_user_default("Company"),
-			})
-			war = p.insert(ignore_permissions=True)
-			frappe.db.commit()
-			query2="SELECT * FROM `tabWarehouse` WHERE `name`='{}'".format(war.name)
-			warehouse_list = frappe.db.sql(query2,as_dict=1)
-
-		if len(warehouse_list)==0:
-			reply["message"]="Warehouse not found."
-			return reply
-
-		warehouse = warehouse_list[0]
+		child = frappe.new_doc("Distributor Item")
+		child.update({
+			'item_code': itemAdded.name,
+			'item_name': itemAdded.item_name,
+			'parent': doc_distributor.name,
+			'parenttype': 'Distributor',
+			'parentfield': 'item'
+		})
+		doc_distributor.item.append(child)
+		doc_distributor.save(ignore_permissions=True)
 
 
-		query2="SELECT * FROM `tabDistributor` WHERE `mobile`='{}'".format(phone)
-		distributor_list = frappe.db.sql(query2,as_dict=1)
-		if len(distributor_list)==0:
-			p = frappe.get_doc({
-				"docstatus":0,
-				"doctype":"Distributor",
-				"name":"New Distributor 1",
-				"__islocal":1,
-				"__unsaved":1,
-				"full_name":company_name,
-				"mobile":phone,
-				"distributor_first_name":first_name,
-				"distributor_last_name":last_name,
-				"customer":customer['name'],
-				"warehouse":warehouse['name'],})
-			p.insert(ignore_permissions=True)
-			frappe.db.commit()
-			query2="SELECT * FROM `tabDistributor` WHERE `mobile`='{}'".format(phone)
-			distributor_list = frappe.db.sql(query2,as_dict=1)
-
-		if len(distributor_list)==0:
-			reply["message"]="destributor not found/created."
-			return reply
-
-		distributor = distributor_list[0]
-
-
-
-
-		query2="SELECT * FROM `tabDelivery Team` WHERE `distributor`='{}' AND `customer`='{}'".format(distributor['name'],customer['name'])
-		dl_list = frappe.db.sql(query2,as_dict=1)
-		if len(dl_list)==0:
-			dl = frappe.get_doc({
-				"docstatus":0,
-				"doctype":"Delivery Team",
-				"name":"New Delivery Team 1",
-				"__islocal":1,
-				"__unsaved":1,
-				"employee_name":company_name,
-				"customer":customer['name'],
-				"distributor":distributor['name'],
-				"mobile":phone
-			})
-			dl.insert(ignore_permissions=True)
-			frappe.db.commit()
-
-
-
-
-
-		#Page Permission
-
-		query2="SELECT * FROM `tabStaff Page Permission` WHERE `customer`='{}'".format(customer['name'])
-		spp_list = frappe.db.sql(query2,as_dict=1)
-		if len(spp_list)==0:
-			pagePermission = frappe.get_doc({
-				"docstatus":0,
-				"doctype":"Staff Page Permission",
-				"name":"New Staff Page Permission 1",
-				"__islocal":1,
-				"__unsaved":1,
-				"customer":customer['name'],
-			})
-			pp = pagePermission.insert(ignore_permissions=True)
-			frappe.db.commit()
-			query2="SELECT * FROM `tabStaff Page Permission` WHERE `customer`='{}'".format(customer['name'])
-			spp_list = frappe.db.sql(query2,as_dict=1)
-
-		if len(spp_list)==0:
-			reply["message"]="Page permission not found"
-			return reply
-
-		spp = spp_list[0]
-
-
-
-
-
-		pp_doc = frappe.get_doc('Staff Page Permission',spp.name)
-
-		staff_page_query = "SELECT * FROM `tabStaff Pages` WHERE `name`='('Customer List','Delivery Person List')'"
-		staff_page_list = frappe.db.sql(staff_page_query,as_dict=1)
-		
-		for paged in staff_page_list:
-			child = frappe.new_doc("Staff Page Permission Child")
-			child.update({
-				'page': paged['name'],
-				'image': paged['image'],
-				'title': paged['title'],
-				'parent': pp_doc.name,
-				'parenttype': 'Staff Page Permission',
-				'parentfield': 'pages'
-			})
-			pp_doc.pages.append(child)
-		pp_doc.save(ignore_permissions=True)
-
-
-
-
-		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer['name']),timeout=100000,customer=customer['name'])
-		reply["message"]="Distributor created."
+		frappe.db.sql("""UPDATE `tabItem Default` SET `default_warehouse`='"""+doc_distributor.warehouse+"""' WHERE `parent`='"""+itemAdded.name+"""' """)
+		frappe.db.commit()
+		reply["message"]="Item created."
 
 	except Exception as e:
 		frappe.local.response['http_status_code'] = 500
 		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_distributor','distributor_create')
 
-	return reply
 
-
-
-@frappe.whitelist(allow_guest=True)
-def delivery_person_create(**kwargs):
-
-	parameters=frappe._dict(kwargs)
-	reply=defaultResponseBody()
+	if sessionuser not in [None,'',"","None"]:
+		frappe.set_user(sessionuser)
 	
-	keysList = list(parameters.keys())
-
-
-	if 'phone' not in keysList:
-		reply["message"]="Phone number not found in parameters."
-		return reply
-
-	if 'first_name' not in keysList:
-		reply["message"]="First name not found in parameters."
-		return reply
-
-	if 'last_name' not in keysList:
-		reply["message"]="Last name not found in parameters."
-		return reply
-
-	if 'city' not in keysList:
-		reply["message"]="City not found in parameters."
-		return reply
-
-	if 'pin_code' not in keysList:
-		reply["message"]="Pincode not found in parameters."
-		return reply
-
-	if 'distributor' not in keysList:
-		reply["message"]="Distributor not found in parameters."
-		return reply		
-
-
-	phone = parameters['phone']
-	first_name = parameters['first_name']
-	last_name = parameters['last_name']
-	city = parameters['city']
-	pin_code = parameters['pin_code']
-	distributor = parameters['distributor']
-
-
-	company_name = "{} {}".format(first_name,last_name)
-	
-	reply['data']={}
-
-	try:
-
-
-		query2="SELECT name FROM `tabDelivery Team` WHERE `mobile`='{}' AND `distributor`='{}'".format(phone,distributor)
-		previous_list = frappe.db.sql(query2,as_dict=1)
-		if len(previous_list)!=0:
-			reply["message"]="Delivery person is alreay created with this mobile no. ID:{}".format(previous_list[0]['name'])
-			return reply
-
-
-
-		query2="SELECT name FROM `tabDistributor` WHERE `name`='{}'".format(distributor)
-		distribotor_list = frappe.db.sql(query2,as_dict=1)
-		if len(distribotor_list)==0:
-			reply["message"]="Distributor not found."
-			return reply
-		
-		distributor = distribotor_list[0]
-
-		##  Customer created
-		customerUniqueName = "DP{}{}".format(distributor['name'],phone)
-		query2="SELECT * FROM `tabCustomer` WHERE `name`='{}'".format(customerUniqueName)
-		customer_list = frappe.db.sql(query2,as_dict=1)
-		if len(customer_list)==0:
-			qury = "INSERT INTO `tabCustomer` (`name`, `owner`, `docstatus`,  `idx`, `naming_series`, `disabled`, `customer_name`, `territory`, `customer_group`, `customer_type`, `is_frozen`, `custom_city`, `custom_pincode`,`creation`,`modified`,`modified_by`,`mobile_no`) VALUES ('{}', '{}', '0',  '0', 'CUST-', '0', '{}', 'India','Individual', 'Individual', '0', '{}', '{}', '{}', '{}', '{}', '{}')".format(customerUniqueName, phone, company_name, city, pin_code,datetime.now(),datetime.now(),phone,phone)
-			frappe.db.sql(qury)
-			frappe.db.commit()
-			query2="SELECT * FROM `tabCustomer` WHERE `name`='{}'".format(customerUniqueName)
-			customer_list = frappe.db.sql(query2,as_dict=1)
-
-		if len(customer_list)==0:
-			reply["message"]="Customer not found."
-			return reply
-
-		customer = customer_list[0]
-
-
-		dl = frappe.get_doc({
-			"docstatus":0,
-			"doctype":"Delivery Team",
-			"name":"New Delivery Team 1",
-			"__islocal":1,
-			"__unsaved":1,
-			"employee_name":company_name,
-			"first_name":first_name,
-			"last_name":last_name,
-			"mobile":phone,	
-			"customer":customer['name'],
-			"distributor":distributor['name'],})
-		dl.insert(ignore_permissions=True)
-		frappe.db.commit()
-
-
-		#Page Permission
-		query2="SELECT * FROM `tabStaff Page Permission` WHERE `customer`='{}'".format(customer['name'])
-		spp_list = frappe.db.sql(query2,as_dict=1)
-		if len(spp_list)==0:
-			pagePermission = frappe.get_doc({
-				"docstatus":0,
-				"doctype":"Staff Page Permission",
-				"name":"New Staff Page Permission 1",
-				"__islocal":1,
-				"__unsaved":1,
-				"customer":customer['name'],
-			})
-			pp = pagePermission.insert(ignore_permissions=True)
-			frappe.db.commit()
-			query2="SELECT * FROM `tabStaff Page Permission` WHERE `customer`='{}'".format(customer['name'])
-			spp_list = frappe.db.sql(query2,as_dict=1)
-
-		if len(spp_list)==0:
-			reply["message"]="Page permission not found"
-			return reply
-
-		spp = spp_list[0]
-
-
-
-
-
-		pp_doc = frappe.get_doc('Staff Page Permission',spp.name)
-
-		staff_page_query = "SELECT * FROM `tabStaff Pages` WHERE `name`=('Customer Create')"
-		staff_page_list = frappe.db.sql(staff_page_query,as_dict=1)
-		
-		for paged in staff_page_list:
-			child = frappe.new_doc("Staff Page Permission Child")
-			child.update({
-				'page': paged['name'],
-				'image': paged['image'],
-				'display_title': paged['display_title'],
-				'parent': pp_doc.name,
-				'parenttype': 'Staff Page Permission',
-				'parentfield': 'pages'
-			})
-			pp_doc.pages.append(child)
-		pp_doc.save(ignore_permissions=True)
-
-		frappe.enqueue(customerDetailUpdate,queue='long',job_name="Customer detail update: {}".format(customer['name']),timeout=100000,customer=customer['name'])
-		reply["message"]="Delivery person created created."
-
-	except Exception as e:
-		frappe.local.response['http_status_code'] = 500
-		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_distributor','delivery_person_create')
-
-	return reply
-
-
-@frappe.whitelist(allow_guest=True)
-def delivery_person_list(**kwargs):
-
-	parameters=frappe._dict(kwargs)
-	reply=defaultResponseBody()
-	
-	keysList = list(parameters.keys())
-
-
-	if 'distributor' not in keysList:
-		reply["message"]="Distributor not found in parameters."
-		return reply		
-
-	distributor = parameters['distributor']
-
-	try:
-
-
-		query2="SELECT name,employee_name,mobile,customer,distributor FROM `tabDelivery Team` WHERE `distributor`='{}'".format(distributor)
-		dataFetch = frappe.db.sql(query2,as_dict=1)
-		finalReturn = []
-		for cust in dataFetch:
-			balance=GetBalance(cust['customer'])
-			cust['custom_balance']=balance
-			finalReturn.append(cust)
-
-		reply['data']=finalReturn
-
-		reply["message"]="Delivery person created created."
-
-	except Exception as e:
-		frappe.local.response['http_status_code'] = 500
-		reply = defaultResponseErrorBody(reply,str(e),str(traceback.format_exc()),'api_distributor','delivery_person_create')
-
 	return reply

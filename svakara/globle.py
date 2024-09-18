@@ -15,7 +15,7 @@ def globleUserLogin(allow_guest=True):
 
 @frappe.whitelist(allow_guest=True)
 def globleLoginUser(allow_guest=True):
-	return "svakara@gmail.com"
+	return "administrator"
 
 @frappe.whitelist(allow_guest=True)
 def defaultResponseBody():
